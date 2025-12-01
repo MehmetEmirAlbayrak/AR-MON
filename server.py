@@ -203,4 +203,7 @@ def generate_mesh():
 
 if __name__ == "__main__":
     print("Starting MAIN server...")
-    app.run(host="0.0.0.0", port=5001, debug=True)
+    # Railway PORT'u environment variable olarak veriyor
+    port = int(os.environ.get("PORT", 5001))
+    app.run(host="0.0.0.0", port=port, debug=False)
+
