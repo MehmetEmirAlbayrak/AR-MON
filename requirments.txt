@@ -1,0 +1,9 @@
+flask
+pillow
+ultralytics
+opencv-python
+numpy
+requests
+python-multipart
+torch
+torchvision
