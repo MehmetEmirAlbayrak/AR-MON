@@ -17,10 +17,7 @@ def generate_mesh():
     print(f"[Dummy] Pretending to analyze image of size {len(img_bytes)} bytes")
 
     # Şimdilik hep aynı GLB’yi döndürüyoruz (Damaged Helmet)
-    model_url = (
-        "https://raw.githubusercontent.com/KhronosGroup/"
-        "glTF-Sample-Models/master/2.0/DamagedHelmet/glTF-Binary/DamagedHelmet.glb"
-    )
+    model_url = "https://github.com/KhronosGroup/glTF-Sample-Models/raw/master/2.0/Box/glTF-Binary/Box.glb"
 
     print(f"[generate_mesh] returning model_url = {model_url}")
 
