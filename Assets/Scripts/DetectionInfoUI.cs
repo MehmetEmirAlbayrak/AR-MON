@@ -94,26 +94,27 @@ public class DetectionInfoUI : MonoBehaviour
         
         canvasObj.AddComponent<GraphicRaycaster>();
         
-        // SOL ÜST - Biome Panel
+        // ============ SOL ÜST - Biome Panel ============
+        // Notch için daha aşağıda
         biomePanel = new GameObject("BiomePanel");
         biomePanel.transform.SetParent(canvasObj.transform, false);
         Image biomeBg = biomePanel.AddComponent<Image>();
-        biomeBg.color = new Color(0, 0, 0, 0.6f);
+        biomeBg.color = new Color(0, 0, 0, 0.7f);
         biomeBg.raycastTarget = false;
         
         RectTransform biomeRect = biomePanel.GetComponent<RectTransform>();
         biomeRect.anchorMin = new Vector2(0, 1);
         biomeRect.anchorMax = new Vector2(0, 1);
         biomeRect.pivot = new Vector2(0, 1);
-        biomeRect.anchoredPosition = new Vector2(10, -10);
-        biomeRect.sizeDelta = new Vector2(300, 40);
+        biomeRect.anchoredPosition = new Vector2(15, -70); // Notch için -70
+        biomeRect.sizeDelta = new Vector2(320, 50);
         
         // Biome Text
         GameObject biomeTxtObj = new GameObject("BiomeText");
         biomeTxtObj.transform.SetParent(biomePanel.transform, false);
         biomeText = biomeTxtObj.AddComponent<TextMeshProUGUI>();
         biomeText.text = "Biome: Algilaniyor...";
-        biomeText.fontSize = 20;
+        biomeText.fontSize = 22; // Mobilde daha okunabilir
         biomeText.fontStyle = FontStyles.Bold;
         biomeText.alignment = TextAlignmentOptions.Left;
         biomeText.color = biomeColor;
@@ -122,29 +123,30 @@ public class DetectionInfoUI : MonoBehaviour
         RectTransform biomeTxtRect = biomeTxtObj.GetComponent<RectTransform>();
         biomeTxtRect.anchorMin = Vector2.zero;
         biomeTxtRect.anchorMax = Vector2.one;
-        biomeTxtRect.offsetMin = new Vector2(10, 5);
-        biomeTxtRect.offsetMax = new Vector2(-10, -5);
+        biomeTxtRect.offsetMin = new Vector2(12, 8);
+        biomeTxtRect.offsetMax = new Vector2(-12, -8);
         
-        // SAĞ ÜST - Objects Panel
+        // ============ SOL ALT - Objects Panel ============
+        // Home bar için daha yukarıda
         objectsPanel = new GameObject("ObjectsPanel");
         objectsPanel.transform.SetParent(canvasObj.transform, false);
         Image objectsBg = objectsPanel.AddComponent<Image>();
-        objectsBg.color = new Color(0, 0, 0, 0.6f);
+        objectsBg.color = new Color(0, 0, 0, 0.7f);
         objectsBg.raycastTarget = false;
         
         RectTransform objectsRect = objectsPanel.GetComponent<RectTransform>();
-        objectsRect.anchorMin = new Vector2(1, 1);
-        objectsRect.anchorMax = new Vector2(1, 1);
-        objectsRect.pivot = new Vector2(1, 1);
-        objectsRect.anchoredPosition = new Vector2(-10, -10);
-        objectsRect.sizeDelta = new Vector2(300, 150);
+        objectsRect.anchorMin = new Vector2(0, 0);
+        objectsRect.anchorMax = new Vector2(0, 0);
+        objectsRect.pivot = new Vector2(0, 0);
+        objectsRect.anchoredPosition = new Vector2(15, 100); // Home bar + ÇANTA butonu için
+        objectsRect.sizeDelta = new Vector2(350, 180);
         
         // Objects Text
         GameObject objectsTxtObj = new GameObject("ObjectsText");
         objectsTxtObj.transform.SetParent(objectsPanel.transform, false);
         objectsText = objectsTxtObj.AddComponent<TextMeshProUGUI>();
         objectsText.text = "Algilanan: Bekleniyor...";
-        objectsText.fontSize = 16;
+        objectsText.fontSize = 18;
         objectsText.alignment = TextAlignmentOptions.Left;
         objectsText.color = objectColor;
         objectsText.raycastTarget = false;
@@ -152,10 +154,10 @@ public class DetectionInfoUI : MonoBehaviour
         RectTransform objectsTxtRect = objectsTxtObj.GetComponent<RectTransform>();
         objectsTxtRect.anchorMin = Vector2.zero;
         objectsTxtRect.anchorMax = Vector2.one;
-        objectsTxtRect.offsetMin = new Vector2(10, 5);
-        objectsTxtRect.offsetMax = new Vector2(-10, -5);
+        objectsTxtRect.offsetMin = new Vector2(12, 8);
+        objectsTxtRect.offsetMax = new Vector2(-12, -8);
         
-        Debug.Log("DetectionInfoUI dinamik olarak oluşturuldu!");
+        Debug.Log("DetectionInfoUI dinamik olarak oluşturuldu (mobil uyumlu)!");
     }
 
     /// <summary>
@@ -331,4 +333,3 @@ public class DetectionInfoUI : MonoBehaviour
         return formatted;
     }
 }
-

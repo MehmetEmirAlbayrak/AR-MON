@@ -251,10 +251,10 @@ public class PokemonInventoryUI : MonoBehaviour
         rt.anchorMin = new Vector2(0, 0);
         rt.anchorMax = new Vector2(1, 0);
         
-        // LayoutElement - ZORUNLU
+        // LayoutElement - ZORUNLU - Mobil için daha yüksek
         LayoutElement le = slot.AddComponent<LayoutElement>();
-        le.minHeight = 80;
-        le.preferredHeight = 80;
+        le.minHeight = 100;
+        le.preferredHeight = 100;
         
         // Tek bir text ile tüm bilgiyi göster
         GameObject textObj = new GameObject("Text");
@@ -262,8 +262,8 @@ public class PokemonInventoryUI : MonoBehaviour
         
         TextMeshProUGUI text = textObj.AddComponent<TextMeshProUGUI>();
         string status = pokemon.IsFainted ? " <color=red>(Bayılmış)</color>" : "";
-        text.text = $"<b>{pokemon.pokemonName}</b>{status}\n<size=16>Lv.{pokemon.level}  HP:{pokemon.currentHealth}/{pokemon.Health}  ATK:{pokemon.Attack}</size>";
-        text.fontSize = 20;
+        text.text = $"<b>{pokemon.pokemonName}</b>{status}\n<size=18>Lv.{pokemon.level}  HP:{pokemon.currentHealth}/{pokemon.Health}  ATK:{pokemon.Attack}</size>";
+        text.fontSize = 24; // Mobilde daha okunabilir
         text.color = Color.white;
         text.alignment = TextAlignmentOptions.Left;
         text.raycastTarget = false;
@@ -293,8 +293,8 @@ public class PokemonInventoryUI : MonoBehaviour
         renameRect.anchorMin = new Vector2(1, 0.5f);
         renameRect.anchorMax = new Vector2(1, 0.5f);
         renameRect.pivot = new Vector2(1, 0.5f);
-        renameRect.anchoredPosition = new Vector2(-10, 0);
-        renameRect.sizeDelta = new Vector2(60, 35);
+        renameRect.anchoredPosition = new Vector2(-15, 0);
+        renameRect.sizeDelta = new Vector2(70, 45); // Mobil için daha büyük
         
         GameObject renameTxtObj = new GameObject("Text");
         renameTxtObj.transform.SetParent(renameBtn.transform, false);
@@ -734,6 +734,7 @@ public class PokemonInventoryUI : MonoBehaviour
         closeTextRect.sizeDelta = Vector2.zero;
         
         // ============ ÇANTA BUTONU (her zaman görünür) ============
+        // Mobil için daha büyük ve home bar'dan uzak
         GameObject openObj = new GameObject("OpenButton");
         openObj.transform.SetParent(canvasObj.transform, false);
         Image openBg = openObj.AddComponent<Image>();
@@ -746,14 +747,14 @@ public class PokemonInventoryUI : MonoBehaviour
         openRect.anchorMin = new Vector2(1, 0);
         openRect.anchorMax = new Vector2(1, 0);
         openRect.pivot = new Vector2(1, 0);
-        openRect.anchoredPosition = new Vector2(-20, 20);
-        openRect.sizeDelta = new Vector2(140, 55);
+        openRect.anchoredPosition = new Vector2(-20, 40); // Home bar için daha yukarıda
+        openRect.sizeDelta = new Vector2(160, 65); // Daha büyük dokunma alanı
         
         GameObject openTextObj = new GameObject("Text");
         openTextObj.transform.SetParent(openObj.transform, false);
         TextMeshProUGUI openText = openTextObj.AddComponent<TextMeshProUGUI>();
         openText.text = "ÇANTA";
-        openText.fontSize = 22;
+        openText.fontSize = 26; // Mobilde daha okunabilir
         openText.fontStyle = FontStyles.Bold;
         openText.alignment = TextAlignmentOptions.Center;
         openText.color = Color.white;

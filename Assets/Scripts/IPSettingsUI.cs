@@ -55,25 +55,26 @@ public class IPSettingsUI : MonoBehaviour
         
         canvasObj.AddComponent<GraphicRaycaster>();
         
-        // Ayarlar butonu (sağ üst köşe)
+        // ============ AYARLAR BUTONU ============
+        // Daha büyük dokunma alanı (min 48dp öneriliyor)
         GameObject settingsBtnObj = new GameObject("SettingsBtn");
         settingsBtnObj.transform.SetParent(canvasObj.transform, false);
         Image settingsBtnBg = settingsBtnObj.AddComponent<Image>();
         settingsBtnBg.color = new Color(0.3f, 0.3f, 0.4f, 0.9f);
         
         RectTransform settingsBtnRect = settingsBtnObj.GetComponent<RectTransform>();
-        // Sağ üst köşe - stretch olmayan sabit boyut
+        // Sağ üst köşe - BÜYÜTÜLDÜ ve safe area için daha içeride
         settingsBtnRect.anchorMin = new Vector2(1, 1);
         settingsBtnRect.anchorMax = new Vector2(1, 1);
-        settingsBtnRect.pivot = new Vector2(0.5f, 0.5f);
-        settingsBtnRect.sizeDelta = new Vector2(50, 50);
-        settingsBtnRect.anchoredPosition = new Vector2(-45, -45); // Sağ üst köşeden 45px içeride
+        settingsBtnRect.pivot = new Vector2(1, 1);
+        settingsBtnRect.sizeDelta = new Vector2(70, 70); // 50'den 70'e büyütüldü
+        settingsBtnRect.anchoredPosition = new Vector2(-15, -60); // Notch için daha aşağıda
         
         GameObject settingsTxtObj = new GameObject("Text");
         settingsTxtObj.transform.SetParent(settingsBtnObj.transform, false);
         TextMeshProUGUI settingsTxt = settingsTxtObj.AddComponent<TextMeshProUGUI>();
-        settingsTxt.text = "IP";
-        settingsTxt.fontSize = 20;
+        settingsTxt.text = "⚙"; // Gear emoji
+        settingsTxt.fontSize = 32;
         settingsTxt.fontStyle = FontStyles.Bold;
         settingsTxt.alignment = TextAlignmentOptions.Center;
         settingsTxt.color = Color.white;
@@ -86,7 +87,7 @@ public class IPSettingsUI : MonoBehaviour
         settingsButton.targetGraphic = settingsBtnBg;
         settingsButton.onClick.AddListener(ToggleSettings);
         
-        // Ayarlar Paneli
+        // ============ AYARLAR PANELİ ============
         settingsPanel = new GameObject("SettingsPanel");
         settingsPanel.transform.SetParent(canvasObj.transform, false);
         
@@ -98,7 +99,7 @@ public class IPSettingsUI : MonoBehaviour
         overlayRect.anchorMax = Vector2.one;
         overlayRect.sizeDelta = Vector2.zero;
         
-        // Dialog kutusu - sabit boyutlu
+        // Dialog kutusu - mobil için daha büyük
         GameObject dialog = new GameObject("Dialog");
         dialog.transform.SetParent(settingsPanel.transform, false);
         Image dialogBg = dialog.AddComponent<Image>();
@@ -107,14 +108,14 @@ public class IPSettingsUI : MonoBehaviour
         dialogRect.anchorMin = new Vector2(0.5f, 0.5f);
         dialogRect.anchorMax = new Vector2(0.5f, 0.5f);
         dialogRect.pivot = new Vector2(0.5f, 0.5f);
-        dialogRect.sizeDelta = new Vector2(500, 350); // Sabit boyut
+        dialogRect.sizeDelta = new Vector2(600, 450); // Daha büyük
         
         // Başlık
         GameObject titleObj = new GameObject("Title");
         titleObj.transform.SetParent(dialog.transform, false);
         TextMeshProUGUI titleTxt = titleObj.AddComponent<TextMeshProUGUI>();
         titleTxt.text = "SERVER AYARLARI";
-        titleTxt.fontSize = 28;
+        titleTxt.fontSize = 32; // Daha büyük
         titleTxt.fontStyle = FontStyles.Bold;
         titleTxt.alignment = TextAlignmentOptions.Center;
         titleTxt.color = Color.white;
@@ -122,25 +123,25 @@ public class IPSettingsUI : MonoBehaviour
         titleRect.anchorMin = new Vector2(0, 1);
         titleRect.anchorMax = new Vector2(1, 1);
         titleRect.pivot = new Vector2(0.5f, 1);
-        titleRect.anchoredPosition = new Vector2(0, -15);
-        titleRect.sizeDelta = new Vector2(0, 50);
+        titleRect.anchoredPosition = new Vector2(0, -20);
+        titleRect.sizeDelta = new Vector2(0, 60);
         
         // IP Label
         GameObject labelObj = new GameObject("Label");
         labelObj.transform.SetParent(dialog.transform, false);
         TextMeshProUGUI labelTxt = labelObj.AddComponent<TextMeshProUGUI>();
         labelTxt.text = "Server IP Adresi:";
-        labelTxt.fontSize = 20;
+        labelTxt.fontSize = 24; // Daha büyük
         labelTxt.alignment = TextAlignmentOptions.Left;
         labelTxt.color = new Color(0.8f, 0.8f, 0.8f);
         RectTransform labelRect = labelObj.GetComponent<RectTransform>();
         labelRect.anchorMin = new Vector2(0, 1);
         labelRect.anchorMax = new Vector2(1, 1);
         labelRect.pivot = new Vector2(0.5f, 1);
-        labelRect.anchoredPosition = new Vector2(0, -75);
-        labelRect.sizeDelta = new Vector2(-40, 30);
+        labelRect.anchoredPosition = new Vector2(0, -90);
+        labelRect.sizeDelta = new Vector2(-50, 35);
         
-        // Input Field
+        // Input Field - Daha büyük
         GameObject inputObj = new GameObject("InputField");
         inputObj.transform.SetParent(dialog.transform, false);
         Image inputBg = inputObj.AddComponent<Image>();
@@ -149,8 +150,8 @@ public class IPSettingsUI : MonoBehaviour
         inputRect.anchorMin = new Vector2(0, 1);
         inputRect.anchorMax = new Vector2(1, 1);
         inputRect.pivot = new Vector2(0.5f, 1);
-        inputRect.anchoredPosition = new Vector2(0, -115);
-        inputRect.sizeDelta = new Vector2(-40, 50);
+        inputRect.anchoredPosition = new Vector2(0, -140);
+        inputRect.sizeDelta = new Vector2(-50, 70); // Daha yüksek
         
         // Text Area
         GameObject textArea = new GameObject("TextArea");
@@ -158,14 +159,14 @@ public class IPSettingsUI : MonoBehaviour
         RectTransform textAreaRect = textArea.AddComponent<RectTransform>();
         textAreaRect.anchorMin = Vector2.zero;
         textAreaRect.anchorMax = Vector2.one;
-        textAreaRect.offsetMin = new Vector2(10, 5);
-        textAreaRect.offsetMax = new Vector2(-10, -5);
+        textAreaRect.offsetMin = new Vector2(15, 10);
+        textAreaRect.offsetMax = new Vector2(-15, -10);
         
         // Input Text
         GameObject inputTxtObj = new GameObject("Text");
         inputTxtObj.transform.SetParent(textArea.transform, false);
         TextMeshProUGUI inputTxt = inputTxtObj.AddComponent<TextMeshProUGUI>();
-        inputTxt.fontSize = 22;
+        inputTxt.fontSize = 26; // Daha büyük
         inputTxt.alignment = TextAlignmentOptions.Left;
         inputTxt.verticalAlignment = VerticalAlignmentOptions.Middle;
         inputTxt.color = Color.white;
@@ -180,7 +181,7 @@ public class IPSettingsUI : MonoBehaviour
         placeholderObj.transform.SetParent(textArea.transform, false);
         TextMeshProUGUI placeholderTxt = placeholderObj.AddComponent<TextMeshProUGUI>();
         placeholderTxt.text = "http://192.168.1.100:5000";
-        placeholderTxt.fontSize = 22;
+        placeholderTxt.fontSize = 26;
         placeholderTxt.fontStyle = FontStyles.Italic;
         placeholderTxt.alignment = TextAlignmentOptions.Left;
         placeholderTxt.verticalAlignment = VerticalAlignmentOptions.Middle;
@@ -203,18 +204,18 @@ public class IPSettingsUI : MonoBehaviour
         statusObj.transform.SetParent(dialog.transform, false);
         statusText = statusObj.AddComponent<TextMeshProUGUI>();
         statusText.text = "";
-        statusText.fontSize = 18;
+        statusText.fontSize = 22;
         statusText.alignment = TextAlignmentOptions.Center;
         statusText.color = new Color(0.5f, 1f, 0.5f);
         RectTransform statusRect = statusObj.GetComponent<RectTransform>();
         statusRect.anchorMin = new Vector2(0, 1);
         statusRect.anchorMax = new Vector2(1, 1);
         statusRect.pivot = new Vector2(0.5f, 1);
-        statusRect.anchoredPosition = new Vector2(0, -175);
-        statusRect.sizeDelta = new Vector2(-40, 30);
+        statusRect.anchoredPosition = new Vector2(0, -225);
+        statusRect.sizeDelta = new Vector2(-50, 35);
         
-        // Butonlar
-        // Kapat butonu (sol)
+        // ============ BUTONLAR ============
+        // Kapat butonu (sol) - Daha büyük
         GameObject closeBtnObj = new GameObject("CloseBtn");
         closeBtnObj.transform.SetParent(dialog.transform, false);
         Image closeBtnBg = closeBtnObj.AddComponent<Image>();
@@ -226,14 +227,14 @@ public class IPSettingsUI : MonoBehaviour
         closeBtnRect.anchorMin = new Vector2(0, 0);
         closeBtnRect.anchorMax = new Vector2(0.48f, 0);
         closeBtnRect.pivot = new Vector2(0, 0);
-        closeBtnRect.anchoredPosition = new Vector2(20, 20);
-        closeBtnRect.sizeDelta = new Vector2(0, 60);
+        closeBtnRect.anchoredPosition = new Vector2(25, 30);
+        closeBtnRect.sizeDelta = new Vector2(0, 80); // Daha yüksek
         
         GameObject closeTxtObj = new GameObject("Text");
         closeTxtObj.transform.SetParent(closeBtnObj.transform, false);
         TextMeshProUGUI closeTxt = closeTxtObj.AddComponent<TextMeshProUGUI>();
         closeTxt.text = "KAPAT";
-        closeTxt.fontSize = 22;
+        closeTxt.fontSize = 26; // Daha büyük
         closeTxt.fontStyle = FontStyles.Bold;
         closeTxt.alignment = TextAlignmentOptions.Center;
         closeTxt.color = Color.white;
@@ -243,7 +244,7 @@ public class IPSettingsUI : MonoBehaviour
         closeTxtRect.offsetMin = Vector2.zero;
         closeTxtRect.offsetMax = Vector2.zero;
         
-        // Kaydet butonu (sağ)
+        // Kaydet butonu (sağ) - Daha büyük
         GameObject saveBtnObj = new GameObject("SaveBtn");
         saveBtnObj.transform.SetParent(dialog.transform, false);
         Image saveBtnBg = saveBtnObj.AddComponent<Image>();
@@ -255,14 +256,14 @@ public class IPSettingsUI : MonoBehaviour
         saveBtnRect.anchorMin = new Vector2(0.52f, 0);
         saveBtnRect.anchorMax = new Vector2(1, 0);
         saveBtnRect.pivot = new Vector2(1, 0);
-        saveBtnRect.anchoredPosition = new Vector2(-20, 20);
-        saveBtnRect.sizeDelta = new Vector2(0, 60);
+        saveBtnRect.anchoredPosition = new Vector2(-25, 30);
+        saveBtnRect.sizeDelta = new Vector2(0, 80); // Daha yüksek
         
         GameObject saveTxtObj = new GameObject("Text");
         saveTxtObj.transform.SetParent(saveBtnObj.transform, false);
         TextMeshProUGUI saveTxt = saveTxtObj.AddComponent<TextMeshProUGUI>();
         saveTxt.text = "KAYDET";
-        saveTxt.fontSize = 22;
+        saveTxt.fontSize = 26; // Daha büyük
         saveTxt.fontStyle = FontStyles.Bold;
         saveTxt.alignment = TextAlignmentOptions.Center;
         saveTxt.color = Color.white;
@@ -275,7 +276,7 @@ public class IPSettingsUI : MonoBehaviour
         // Başlangıçta panel kapalı
         settingsPanel.SetActive(false);
         
-        Debug.Log("IP Settings UI oluşturuldu!");
+        Debug.Log("IP Settings UI oluşturuldu (mobil uyumlu)!");
     }
     
     void LoadSavedIP()
