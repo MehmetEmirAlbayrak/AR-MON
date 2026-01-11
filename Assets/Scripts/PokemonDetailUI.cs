@@ -3,7 +3,7 @@ using UnityEngine.UI;
 using TMPro;
 
 /// <summary>
-/// Pokemon detay sayfası - envanterde Pokemon'a uzun basınca açılır
+/// Pokemon detay sayfası - envanterde Pokemon'a tıklayınca açılır
 /// </summary>
 public class PokemonDetailUI : MonoBehaviour
 {
@@ -77,7 +77,7 @@ public class PokemonDetailUI : MonoBehaviour
         overlayRect.anchorMax = Vector2.one;
         overlayRect.sizeDelta = Vector2.zero;
         
-        // İçerik kutusu
+        // İçerik kutusu - Mobil için daha büyük
         GameObject contentBox = new GameObject("ContentBox");
         contentBox.transform.SetParent(detailPanel.transform, false);
         Image contentBg = contentBox.AddComponent<Image>();
@@ -86,16 +86,16 @@ public class PokemonDetailUI : MonoBehaviour
         contentRect.anchorMin = new Vector2(0.5f, 0.5f);
         contentRect.anchorMax = new Vector2(0.5f, 0.5f);
         contentRect.pivot = new Vector2(0.5f, 0.5f);
-        contentRect.sizeDelta = new Vector2(550, 700);
+        contentRect.sizeDelta = new Vector2(620, 850); // Daha büyük
         
         // ===== BAŞLIK =====
-        nameText = CreateText(contentBox.transform, "NameText", "", 36, FontStyles.Bold, TextAlignmentOptions.Center);
-        SetRectTransform(nameText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -20), new Vector2(-40, 50));
+        nameText = CreateText(contentBox.transform, "NameText", "", 40, FontStyles.Bold, TextAlignmentOptions.Center);
+        SetRectTransform(nameText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -25), new Vector2(-40, 55));
         nameText.color = new Color(1f, 0.9f, 0.3f); // Altın sarısı
         
         // Level
-        levelText = CreateText(contentBox.transform, "LevelText", "Level 1", 28, FontStyles.Bold, TextAlignmentOptions.Center);
-        SetRectTransform(levelText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -75), new Vector2(-40, 40));
+        levelText = CreateText(contentBox.transform, "LevelText", "Level 1", 32, FontStyles.Bold, TextAlignmentOptions.Center);
+        SetRectTransform(levelText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -85), new Vector2(-40, 45));
         levelText.color = new Color(0.6f, 0.8f, 1f);
         
         // ===== XP BAR =====
@@ -104,7 +104,7 @@ public class PokemonDetailUI : MonoBehaviour
         Image xpBgImg = xpBarBg.AddComponent<Image>();
         xpBgImg.color = new Color(0.2f, 0.2f, 0.25f, 1f);
         RectTransform xpBgRect = xpBarBg.GetComponent<RectTransform>();
-        SetRectTransform(xpBgRect, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -125), new Vector2(-60, 25));
+        SetRectTransform(xpBgRect, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -140), new Vector2(-60, 30));
         
         GameObject xpBarFillObj = new GameObject("XPBarFill");
         xpBarFillObj.transform.SetParent(xpBarBg.transform, false);
@@ -116,56 +116,56 @@ public class PokemonDetailUI : MonoBehaviour
         xpFillRect.offsetMin = new Vector2(2, 2);
         xpFillRect.offsetMax = new Vector2(-2, -2);
         
-        xpText = CreateText(contentBox.transform, "XPText", "XP: 0 / 100", 18, FontStyles.Normal, TextAlignmentOptions.Center);
-        SetRectTransform(xpText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -155), new Vector2(-40, 25));
+        xpText = CreateText(contentBox.transform, "XPText", "XP: 0 / 100", 20, FontStyles.Normal, TextAlignmentOptions.Center);
+        SetRectTransform(xpText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -175), new Vector2(-40, 30));
         xpText.color = new Color(0.7f, 0.7f, 0.7f);
         
         // ===== STATLAR =====
         // Stat başlığı
-        TextMeshProUGUI statsTitle = CreateText(contentBox.transform, "StatsTitle", "-- STATLAR --", 22, FontStyles.Bold, TextAlignmentOptions.Center);
-        SetRectTransform(statsTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -200), new Vector2(-40, 35));
+        TextMeshProUGUI statsTitle = CreateText(contentBox.transform, "StatsTitle", "-- STATLAR --", 26, FontStyles.Bold, TextAlignmentOptions.Center);
+        SetRectTransform(statsTitle.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -225), new Vector2(-40, 40));
         statsTitle.color = new Color(0.9f, 0.6f, 0.3f);
         
         // HP
-        hpText = CreateStatRow(contentBox.transform, "HP", 240, new Color(0.3f, 0.9f, 0.4f));
+        hpText = CreateStatRow(contentBox.transform, "HP", 275, new Color(0.3f, 0.9f, 0.4f));
         
         // Attack
-        attackText = CreateStatRow(contentBox.transform, "Attack", 290, new Color(0.9f, 0.4f, 0.3f));
+        attackText = CreateStatRow(contentBox.transform, "Attack", 335, new Color(0.9f, 0.4f, 0.3f));
         
         // Defense
-        defenseText = CreateStatRow(contentBox.transform, "Defense", 340, new Color(0.4f, 0.6f, 0.9f));
+        defenseText = CreateStatRow(contentBox.transform, "Defense", 395, new Color(0.4f, 0.6f, 0.9f));
         
         // Speed
-        speedText = CreateStatRow(contentBox.transform, "Speed", 390, new Color(0.9f, 0.9f, 0.3f));
+        speedText = CreateStatRow(contentBox.transform, "Speed", 455, new Color(0.9f, 0.9f, 0.3f));
         
         // ===== EK BİLGİLER =====
         // Yakalanma tarihi
-        catchDateText = CreateText(contentBox.transform, "CatchDate", "Yakalandi: --", 16, FontStyles.Italic, TextAlignmentOptions.Center);
-        SetRectTransform(catchDateText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -450), new Vector2(-40, 30));
+        catchDateText = CreateText(contentBox.transform, "CatchDate", "Yakalandi: --", 18, FontStyles.Italic, TextAlignmentOptions.Center);
+        SetRectTransform(catchDateText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -530), new Vector2(-40, 35));
         catchDateText.color = new Color(0.5f, 0.5f, 0.5f);
         
         // Prefab ID
-        prefabIdText = CreateText(contentBox.transform, "PrefabId", "Tur: --", 14, FontStyles.Normal, TextAlignmentOptions.Center);
-        SetRectTransform(prefabIdText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -480), new Vector2(-40, 25));
+        prefabIdText = CreateText(contentBox.transform, "PrefabId", "Tur: --", 16, FontStyles.Normal, TextAlignmentOptions.Center);
+        SetRectTransform(prefabIdText.rectTransform, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -565), new Vector2(-40, 30));
         prefabIdText.color = new Color(0.4f, 0.4f, 0.4f);
         
-        // ===== BUTONLAR =====
+        // ===== BUTONLAR ===== (Mobil için büyütüldü)
         // Çağır butonu (en üstte, belirgin)
-        summonButton = CreateButton(contentBox.transform, "SummonBtn", "SAVAS!", new Color(0.8f, 0.5f, 0.1f), 520);
+        summonButton = CreateButton(contentBox.transform, "SummonBtn", "SAVAS!", new Color(0.8f, 0.5f, 0.1f), 620);
         summonButton.onClick.AddListener(OnSummonClicked);
         
         // Serbest bırak butonu
-        releaseButton = CreateButton(contentBox.transform, "ReleaseBtn", "SERBEST BIRAK", new Color(0.7f, 0.3f, 0.2f), 580);
+        releaseButton = CreateButton(contentBox.transform, "ReleaseBtn", "SERBEST BIRAK", new Color(0.7f, 0.3f, 0.2f), 695);
         releaseButton.onClick.AddListener(OnReleaseClicked);
         
         // Kapat butonu
-        closeButton = CreateButton(contentBox.transform, "CloseBtn", "KAPAT", new Color(0.4f, 0.4f, 0.5f), 640);
+        closeButton = CreateButton(contentBox.transform, "CloseBtn", "KAPAT", new Color(0.4f, 0.4f, 0.5f), 770);
         closeButton.onClick.AddListener(Close);
         
         // Başlangıçta gizle
         detailPanel.SetActive(false);
         
-        Debug.Log("PokemonDetailUI olusturuldu!");
+        Debug.Log("PokemonDetailUI olusturuldu (mobil uyumlu)!");
     }
     
     TextMeshProUGUI CreateText(Transform parent, string name, string text, int fontSize, FontStyles style, TextAlignmentOptions alignment)
@@ -184,30 +184,30 @@ public class PokemonDetailUI : MonoBehaviour
     
     TextMeshProUGUI CreateStatRow(Transform parent, string statName, float yPos, Color color)
     {
-        // Arka plan
+        // Arka plan - Mobil için daha yüksek
         GameObject rowBg = new GameObject($"{statName}Row");
         rowBg.transform.SetParent(parent, false);
         Image bgImg = rowBg.AddComponent<Image>();
         bgImg.color = new Color(0.15f, 0.15f, 0.2f, 0.8f);
         RectTransform bgRect = rowBg.GetComponent<RectTransform>();
-        SetRectTransform(bgRect, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -yPos), new Vector2(-60, 40));
+        SetRectTransform(bgRect, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -yPos), new Vector2(-60, 50)); // 40'tan 50'ye
         
         // Stat ismi
-        TextMeshProUGUI label = CreateText(rowBg.transform, "Label", statName, 20, FontStyles.Bold, TextAlignmentOptions.Left);
+        TextMeshProUGUI label = CreateText(rowBg.transform, "Label", statName, 24, FontStyles.Bold, TextAlignmentOptions.Left); // 20'den 24'e
         RectTransform labelRect = label.rectTransform;
         labelRect.anchorMin = new Vector2(0, 0);
         labelRect.anchorMax = new Vector2(0.5f, 1);
-        labelRect.offsetMin = new Vector2(15, 5);
-        labelRect.offsetMax = new Vector2(0, -5);
+        labelRect.offsetMin = new Vector2(20, 8);
+        labelRect.offsetMax = new Vector2(0, -8);
         label.color = color;
         
         // Stat değeri
-        TextMeshProUGUI value = CreateText(rowBg.transform, "Value", "0", 22, FontStyles.Bold, TextAlignmentOptions.Right);
+        TextMeshProUGUI value = CreateText(rowBg.transform, "Value", "0", 26, FontStyles.Bold, TextAlignmentOptions.Right); // 22'den 26'ya
         RectTransform valueRect = value.rectTransform;
         valueRect.anchorMin = new Vector2(0.5f, 0);
         valueRect.anchorMax = new Vector2(1, 1);
-        valueRect.offsetMin = new Vector2(0, 5);
-        valueRect.offsetMax = new Vector2(-15, -5);
+        valueRect.offsetMin = new Vector2(0, 8);
+        valueRect.offsetMax = new Vector2(-20, -8);
         value.color = Color.white;
         
         return value;
@@ -223,9 +223,11 @@ public class PokemonDetailUI : MonoBehaviour
         btn.targetGraphic = btnBg;
         
         RectTransform btnRect = btnObj.GetComponent<RectTransform>();
-        SetRectTransform(btnRect, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -yPos), new Vector2(-80, 50));
+        // Mobil için daha büyük butonlar: 50'den 65'e
+        SetRectTransform(btnRect, new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1), new Vector2(0, -yPos), new Vector2(-80, 65));
         
-        TextMeshProUGUI btnText = CreateText(btnObj.transform, "Text", text, 20, FontStyles.Bold, TextAlignmentOptions.Center);
+        // Mobil için daha büyük font: 20'den 26'ya
+        TextMeshProUGUI btnText = CreateText(btnObj.transform, "Text", text, 26, FontStyles.Bold, TextAlignmentOptions.Center);
         RectTransform txtRect = btnText.rectTransform;
         txtRect.anchorMin = Vector2.zero;
         txtRect.anchorMax = Vector2.one;

@@ -81,6 +81,7 @@ public class PokeballController : MonoBehaviour
         canvasObj.AddComponent<GraphicRaycaster>();
         
         // Pokeball seçim butonu - SOL alt köşe (çanta sağda olduğu için)
+        // Mobil için home bar'dan uzak ve daha büyük
         selectButton = new GameObject("PokeballSelectBtn");
         selectButton.transform.SetParent(canvasObj.transform, false);
         
@@ -91,15 +92,15 @@ public class PokeballController : MonoBehaviour
         btnRect.anchorMin = new Vector2(0, 0); // Sol alt
         btnRect.anchorMax = new Vector2(0, 0);
         btnRect.pivot = new Vector2(0, 0);
-        btnRect.anchoredPosition = new Vector2(20, 20); // Soldan 20px
-        btnRect.sizeDelta = new Vector2(100, 100);
+        btnRect.anchoredPosition = new Vector2(20, 50); // Home bar için daha yukarıda
+        btnRect.sizeDelta = new Vector2(120, 120); // Daha büyük dokunma alanı
         
-        // Buton text
+        // Buton text - Mobil için daha büyük font
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(selectButton.transform, false);
         selectButtonText = textObj.AddComponent<TextMeshProUGUI>();
         selectButtonText.text = "[ ]\nYAKALA";
-        selectButtonText.fontSize = 16;
+        selectButtonText.fontSize = 20; // 16'dan 20'ye
         selectButtonText.fontStyle = FontStyles.Bold;
         selectButtonText.alignment = TextAlignmentOptions.Center;
         selectButtonText.color = Color.white;
@@ -228,8 +229,10 @@ public class PokeballController : MonoBehaviour
                 mouseEndPosition = Input.mousePosition;
                 
                 // Minimum kaydırma mesafesi kontrolü (yanlışlıkla fırlatmayı önle)
+                // DPI-bağımsız: ekran boyutunun %2'si kadar kaydırma gerekli
                 float swipeDistance = (mouseEndPosition - mouseStartPosition).magnitude;
-                if (swipeDistance > 30f) // En az 30 piksel kaydırma gerekli
+                float minSwipeDistance = Mathf.Max(30f, Screen.height * 0.02f);
+                if (swipeDistance > minSwipeDistance) // Ekran boyutuna göre ayarlı
                 {
                     ThrowPokeball();
                     // Fırlattıktan sonra seçimi kaldır
