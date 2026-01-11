@@ -1,0 +1,11 @@
+{
+    "asset": "69a402f10d33b9c47b7f01d25f6fe3c9",
+    "fileName": "019badeb-7478-7377-a7c4-1e93e720a420.pose.json",
+    "prompt": "sphere moving shaking after a while jumping",
+    "negativePrompt": "",
+    "model": "9e46c009-67d8-4254-a3a0-32e3168247ee",
+    "modelName": "Text to Motion",
+    "customSeed": 1995853299,
+    "w3CTraceId": "12e319c8da35da37565b3634916600f8",
+    "isTrimmed": false
+}

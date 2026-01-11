@@ -4,9 +4,9 @@ public class WildPokemon : MonoBehaviour
 {
     [Header("Pokemon Bilgileri")]
     public string pokemonName;
-    public int level = 1;
+    public int level = 0; // 0 = rastgele level atanacak
     public int minLevel = 1;
-    public int maxLevel = 10;
+    public int maxLevel = 15; // Daha geniş level aralığı
     
     [Header("Statlar")]
     public int maxHealth = 50;

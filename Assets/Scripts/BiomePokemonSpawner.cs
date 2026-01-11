@@ -34,6 +34,16 @@ public class BiomePokemonSpawner : MonoBehaviour
     
     [Tooltip("Pokemon boyut varyasyonu (0.5 = yarı boyut, 1.5 = 1.5 kat)")]
     public Vector2 sizeVariation = new Vector2(0.7f, 1.3f);
+    
+    [Header("Pokemon Level Ayarları")]
+    [Tooltip("Minimum spawn level")]
+    public int minPokemonLevel = 1;
+    
+    [Tooltip("Maksimum spawn level")]
+    public int maxPokemonLevel = 20;
+    
+    [Tooltip("Oyuncu ilerledikçe level artışı (her yakalanan Pokemon için +0.5 max level)")]
+    public bool progressiveDifficulty = true;
 
     [Header("Derinlik Tahmini")]
     [Tooltip("Algılanan objelere göre spawn pozisyonu belirle")]
@@ -153,6 +163,9 @@ public class BiomePokemonSpawner : MonoBehaviour
         // Rastgele boyut varyasyonu uygula
         float randomScale = Random.Range(sizeVariation.x, sizeVariation.y);
         pokemon.transform.localScale *= randomScale;
+        
+        // Level ayarla
+        SetPokemonLevel(pokemon);
         
         // Kameraya baksın
         LookAtCamera(pokemon);
@@ -391,6 +404,60 @@ public class BiomePokemonSpawner : MonoBehaviour
                 return true;
         }
         return false;
+    }
+
+    /// <summary>
+    /// Pokemon'a level ata
+    /// </summary>
+    void SetPokemonLevel(GameObject pokemon)
+    {
+        WildPokemon wildPokemon = pokemon.GetComponent<WildPokemon>();
+        if (wildPokemon == null) return;
+        
+        // Dinamik zorluk: Oyuncu ilerledikçe daha yüksek level Pokemon çıksın
+        int effectiveMaxLevel = maxPokemonLevel;
+        
+        if (progressiveDifficulty && PokemonBag.Instance != null)
+        {
+            // Her 2 yakalanan Pokemon için max level +1
+            int caughtCount = PokemonBag.Instance.CaughtPokemon.Count;
+            int bonusLevel = caughtCount / 2;
+            effectiveMaxLevel = Mathf.Min(maxPokemonLevel, minPokemonLevel + 5 + bonusLevel);
+        }
+        
+        // Rastgele level belirle (ağırlıklı - düşük level daha olası)
+        int randomLevel = GetWeightedRandomLevel(minPokemonLevel, effectiveMaxLevel);
+        
+        // WildPokemon'a level ayarlarını ver
+        wildPokemon.minLevel = minPokemonLevel;
+        wildPokemon.maxLevel = effectiveMaxLevel;
+        wildPokemon.level = randomLevel;
+        
+        Debug.Log($"Pokemon level atandı: {randomLevel} (aralık: {minPokemonLevel}-{effectiveMaxLevel})");
+    }
+    
+    /// <summary>
+    /// Ağırlıklı rastgele level - düşük level daha olası
+    /// </summary>
+    int GetWeightedRandomLevel(int min, int max)
+    {
+        // %50 düşük level (min - orta), %35 orta level, %15 yüksek level
+        float roll = Random.value;
+        
+        int range = max - min;
+        
+        if (roll < 0.5f) // %50 - Düşük level
+        {
+            return Random.Range(min, min + range / 3 + 1);
+        }
+        else if (roll < 0.85f) // %35 - Orta level
+        {
+            return Random.Range(min + range / 3, min + (range * 2) / 3 + 1);
+        }
+        else // %15 - Yüksek level (nadir)
+        {
+            return Random.Range(min + (range * 2) / 3, max + 1);
+        }
     }
 
     /// <summary>

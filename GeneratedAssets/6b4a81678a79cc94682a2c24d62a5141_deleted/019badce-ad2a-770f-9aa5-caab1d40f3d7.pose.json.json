@@ -1,0 +1,11 @@
+{
+    "asset": "6b4a81678a79cc94682a2c24d62a5141",
+    "fileName": "019badce-ad2a-770f-9aa5-caab1d40f3d7.pose.json",
+    "prompt": "pokeball shaking shaking then cacth then jump",
+    "negativePrompt": "",
+    "model": "9e46c009-67d8-4254-a3a0-32e3168247ee",
+    "modelName": "Text to Motion",
+    "customSeed": 763723786,
+    "w3CTraceId": "25ba7dc1faa425005611f6e4aeb5c3d5",
+    "isTrimmed": false
+}

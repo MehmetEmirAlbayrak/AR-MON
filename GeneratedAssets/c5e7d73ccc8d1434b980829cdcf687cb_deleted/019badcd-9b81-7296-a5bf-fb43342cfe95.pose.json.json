@@ -1,0 +1,11 @@
+{
+    "asset": "6b4a81678a79cc94682a2c24d62a5141",
+    "fileName": "019badcd-9b81-7296-a5bf-fb43342cfe95.pose.json",
+    "prompt": "shaking and jumping",
+    "negativePrompt": "",
+    "model": "9e46c009-67d8-4254-a3a0-32e3168247ee",
+    "modelName": "Text to Motion",
+    "customSeed": 740401515,
+    "w3CTraceId": "7671dc458111b56e1735d79eb94d14c0",
+    "isTrimmed": false
+}

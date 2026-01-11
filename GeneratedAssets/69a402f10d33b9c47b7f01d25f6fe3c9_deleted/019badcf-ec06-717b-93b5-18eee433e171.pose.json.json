@@ -1,0 +1,11 @@
+{
+    "asset": "69a402f10d33b9c47b7f01d25f6fe3c9",
+    "fileName": "019badcf-ec06-717b-93b5-18eee433e171.pose.json",
+    "prompt": "A pokeball animation where it swings back and forth, and then jumps when it captures something.",
+    "negativePrompt": "",
+    "model": "9e46c009-67d8-4254-a3a0-32e3168247ee",
+    "modelName": "Text to Motion",
+    "customSeed": 2145746215,
+    "w3CTraceId": "721413f6d6fcc216de05e88fb4d3ada9",
+    "isTrimmed": false
+}

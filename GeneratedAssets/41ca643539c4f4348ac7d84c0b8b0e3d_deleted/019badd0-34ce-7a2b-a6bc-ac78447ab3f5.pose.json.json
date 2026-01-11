@@ -1,0 +1,11 @@
+{
+    "asset": "41ca643539c4f4348ac7d84c0b8b0e3d",
+    "fileName": "019badd0-34ce-7a2b-a6bc-ac78447ab3f5.pose.json",
+    "prompt": "An animation of a pokeball swinging and bouncing after capturing.",
+    "negativePrompt": "",
+    "model": "9e46c009-67d8-4254-a3a0-32e3168247ee",
+    "modelName": "Text to Motion",
+    "customSeed": 494009071,
+    "w3CTraceId": "3741b8572a1af2ddda7803a6eb7dc827",
+    "isTrimmed": false
+}
