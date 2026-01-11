@@ -872,6 +872,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   raycastManager: {fileID: 692674514}
+  objectSwapManager: {fileID: 0}
   biomeEntries:
   - biomeName: forest
     pokemonPrefab: {fileID: 3985757784934188552, guid: 04b2d16e1c1a3ff44b840552be5592c0, type: 3}
@@ -881,10 +882,15 @@ MonoBehaviour:
     pokemonPrefab: {fileID: 9203938796069245880, guid: b100033bd257c8e479a5c0a5b148fa2c, type: 3}
   - biomeName: unknown
     pokemonPrefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
-  forwardOffset: 4.07
+  minSpawnDistance: 2
+  maxSpawnDistance: 8
   minDistanceBetweenPokemons: 0.3
   spreadRadius: 1
   sizeVariation: {x: 0.7, y: 1.3}
+  spawnNearDetectedObjects: 1
+  objectProximityMin: 0.5
+  objectProximityMax: 2
+  multiRaycastRadius: 150
   spawnCooldown: 10
 --- !u!4 &624609465
 Transform:
@@ -914,17 +920,29 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   raycastManager: {fileID: 692674514}
+  occlusionManager: {fileID: 0}
   mappings:
   - label: tree
     prefab: {fileID: 2222111361404534124, guid: 88f2fd29f58b9734683512546acec310, type: 3}
+    realWorldHeight: 1
   - label: rock
     prefab: {fileID: 7405846476849542632, guid: c6308cb7062fac34e8e50600086b12a1, type: 3}
+    realWorldHeight: 1
   - label: grass
     prefab: {fileID: 8903058273634794869, guid: f1fc5bb90ac285e4486771552d63bcb8, type: 3}
+    realWorldHeight: 1
+  useDepthEstimation: 1
+  defaultRealHeight: 1.5
+  minDepth: 0.5
+  maxDepth: 15
+  multiRaycastRadius: 100
+  multiRaycastPoints: 8
   referenceDistance: 1
   minObjectSize: 0.1
   maxObjectSize: 3
-  minSpawnDistance: 0.5
+  worldDuplicateDistance: 1
+  sameFrameScreenThreshold: 0.03
+  maxSpawnPerLabel: 0
 --- !u!1 &692674511
 GameObject:
   m_ObjectHideFlags: 0

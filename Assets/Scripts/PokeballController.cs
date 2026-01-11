@@ -10,7 +10,12 @@ public class PokeballController : MonoBehaviour
     public static PokeballController Instance { get; private set; }
     
     public GameObject pokeballPrefab; // Poketopu prefabı
-    public Transform spawnPoint; // Poketopu fırlatma noktası
+    
+    [Header("Kamera Takip Ayarları")]
+    public Vector3 pokeballOffset = new Vector3(0f, -0.5f, 1.2f); // Kameraya göre offset (sağ, aşağı, ileri) - daha uzakta
+    public float pokeballScale = 0.15f; // Pokeball boyutu (küçültmek için)
+    public float followSpeed = 10f; // Takip hızı
+    public bool smoothFollow = true; // Yumuşak takip
     
     [Header("Fırlatma Ayarları")]
     public float minThrowForce = 3f; // Minimum fırlatma kuvveti
@@ -25,12 +30,14 @@ public class PokeballController : MonoBehaviour
     public float verticalMultiplier = 0.5f; // Yukarı-aşağı kuvvet çarpanı
     
     [Header("Diğer")]
-    public float returnDelay = 5f; // Geri dönme süresi
+    public float returnDelay = 3f; // Geri dönme süresi
 
     private GameObject currentPokeball;
     private Vector3 mouseStartPosition;
     private Vector3 mouseEndPosition;
     private bool isDragging = false;
+    private bool isThrown = false; // Fırlatıldı mı?
+    private Camera mainCamera;
     
     // Pokeball seçim sistemi
     private bool isPokeballSelected = false;
@@ -61,8 +68,40 @@ public class PokeballController : MonoBehaviour
     
     void Start()
     {
+        mainCamera = Camera.main;
         CreateUI();
         SpawnPokeball();
+    }
+    
+    void LateUpdate()
+    {
+        // Pokeball kamerayı takip etsin (fırlatılmadıysa)
+        if (currentPokeball != null && !isThrown && mainCamera != null)
+        {
+            // Hedef pozisyon: Kameranın önünde ve biraz aşağıda
+            Vector3 targetPos = mainCamera.transform.position 
+                + mainCamera.transform.forward * pokeballOffset.z
+                + mainCamera.transform.right * pokeballOffset.x
+                + mainCamera.transform.up * pokeballOffset.y;
+            
+            if (smoothFollow)
+            {
+                // Yumuşak takip
+                currentPokeball.transform.position = Vector3.Lerp(
+                    currentPokeball.transform.position, 
+                    targetPos, 
+                    Time.deltaTime * followSpeed
+                );
+            }
+            else
+            {
+                // Anında takip
+                currentPokeball.transform.position = targetPos;
+            }
+            
+            // Kameraya doğru baksın
+            currentPokeball.transform.LookAt(mainCamera.transform);
+        }
     }
     
     void CreateUI()
@@ -246,12 +285,18 @@ public class PokeballController : MonoBehaviour
             isDragging = false;
         }
 
-        // Pokeball düştüyse yenisini oluştur
-        if (currentPokeball != null && currentPokeball.transform.position.y < -10f)
+        // Pokeball düştüyse veya çok uzaklaştıysa yenisini oluştur
+        if (currentPokeball != null && isThrown)
         {
-            Destroy(currentPokeball);
-            currentPokeball = null;
-            SpawnPokeball();
+            float distanceFromCamera = Vector3.Distance(currentPokeball.transform.position, mainCamera.transform.position);
+            
+            if (currentPokeball.transform.position.y < -10f || distanceFromCamera > 50f)
+            {
+                Destroy(currentPokeball);
+                currentPokeball = null;
+                isThrown = false;
+                SpawnPokeball();
+            }
         }
     }
 
@@ -273,9 +318,26 @@ public class PokeballController : MonoBehaviour
 
     void SpawnPokeball()
     {
-        if (currentPokeball == null)
+        if (currentPokeball == null && mainCamera != null)
         {
-            currentPokeball = Instantiate(pokeballPrefab, spawnPoint.position, spawnPoint.rotation);
+            // Kameranın önünde spawn et
+            Vector3 spawnPos = mainCamera.transform.position 
+                + mainCamera.transform.forward * pokeballOffset.z
+                + mainCamera.transform.right * pokeballOffset.x
+                + mainCamera.transform.up * pokeballOffset.y;
+            
+            currentPokeball = Instantiate(pokeballPrefab, spawnPos, Quaternion.identity);
+            isThrown = false; // Fırlatılmadı, kamerayı takip edecek
+            
+            // Boyutu ayarla
+            currentPokeball.transform.localScale = Vector3.one * pokeballScale;
+            
+            // Rigidbody'yi kinematic yap (takip ederken fizik etkilenmesin)
+            Rigidbody rb = currentPokeball.GetComponent<Rigidbody>();
+            if (rb != null)
+            {
+                rb.isKinematic = true;
+            }
             
             // Renderer referansını sıfırla (yeni pokeball için)
             pokeballRenderer = null;
@@ -289,12 +351,17 @@ public class PokeballController : MonoBehaviour
             // Collision script'ini ekle ve initialize et
             PokeballCollision collision = currentPokeball.AddComponent<PokeballCollision>();
             collision.Initialize(this);
+            
+            Debug.Log("Pokeball spawn edildi - kamerayı takip ediyor");
         }
     }
 
     void ThrowPokeball()
     {
-        if (currentPokeball == null) return;
+        if (currentPokeball == null || mainCamera == null) return;
+        
+        // Artık kamerayı takip etmesin
+        isThrown = true;
         
         // Kaydırma vektörünü hesapla
         Vector3 swipeVector = mouseEndPosition - mouseStartPosition;
@@ -314,14 +381,17 @@ public class PokeballController : MonoBehaviour
         {
             rb.isKinematic = false;
             
-            // X: Sağ-sol yön (kaydırma yönüne göre)
+            // Kamera yönüne göre fırlatma kuvveti hesapla
+            Vector3 cameraForward = mainCamera.transform.forward;
+            Vector3 cameraRight = mainCamera.transform.right;
+            Vector3 cameraUp = mainCamera.transform.up;
+            
+            // X: Sağ-sol yön (kaydırma yönüne göre, kamera koordinatlarında)
             // Y: Yukarı kuvvet (kaydırma mesafesine göre)
-            // Z: İleri kuvvet (sabit + kaydırma mesafesine göre)
-            Vector3 force = new Vector3(
-                throwDirection.x * actualForce * horizontalMultiplier,  // Sağ-sol
-                throwDirection.y * actualForce * verticalMultiplier + actualForce * 0.3f,  // Yukarı
-                forwardForce + actualForce * 0.5f  // İleri
-            );
+            // Z: İleri kuvvet (kamera yönünde)
+            Vector3 force = cameraForward * (forwardForce + actualForce * 0.5f)
+                + cameraRight * (throwDirection.x * actualForce * horizontalMultiplier)
+                + cameraUp * (throwDirection.y * actualForce * verticalMultiplier + actualForce * 0.3f);
             
             rb.AddForce(force, ForceMode.Impulse);
             
@@ -334,6 +404,7 @@ public class PokeballController : MonoBehaviour
         // Pokeball'u yok et ve yenisini oluştur
         Destroy(currentPokeball);
         currentPokeball = null;
+        isThrown = false;
         Invoke(nameof(SpawnPokeball), returnDelay);
     }
 
@@ -342,6 +413,15 @@ public class PokeballController : MonoBehaviour
         // Pokeball'u yok et ve yenisini oluştur
         Destroy(currentPokeball);
         currentPokeball = null;
+        isThrown = false;
         Invoke(nameof(SpawnPokeball), returnDelay);
+    }
+    
+    /// <summary>
+    /// Pokeball offset'ini runtime'da değiştirmek için
+    /// </summary>
+    public void SetPokeballOffset(Vector3 newOffset)
+    {
+        pokeballOffset = newOffset;
     }
 }

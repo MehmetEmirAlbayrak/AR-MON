@@ -88,12 +88,12 @@ public class ObjectSwapManager : MonoBehaviour
     }
 
     void ProcessDetectedObject(DetectedObject obj)
-    {
-        GameObject prefab = GetPrefabForLabel(obj.label);
-        if (prefab == null)
+        {
+            GameObject prefab = GetPrefabForLabel(obj.label);
+            if (prefab == null)
             return;
 
-        if (obj.center == null || obj.center.Length < 2)
+            if (obj.center == null || obj.center.Length < 2)
             return;
 
         Vector2 normalizedCenter = new Vector2(obj.center[0], obj.center[1]);
@@ -101,7 +101,7 @@ public class ObjectSwapManager : MonoBehaviour
 
         // 1. Bu frame'de aynı ekran bölgesi zaten işlendi mi? (aynı frame tekrarı engelle)
         if (IsProcessedThisFrame(normalizedCenter, obj.label))
-        {
+            {
             return;
         }
 
@@ -115,11 +115,11 @@ public class ObjectSwapManager : MonoBehaviour
         if (!TryGetWorldPosition(screenPos, estimatedDepth, out worldPosition, out worldRotation, out actualDepth))
         {
             return;
-        }
+            }
 
         // 3. ANA KONTROL: Bu dünya pozisyonunda aynı tipte obje zaten var mı?
         if (IsWorldPositionOccupied(worldPosition, obj.label))
-        {
+            {
             // Zaten var, spawn etme - ama frame'e kaydet ki bu frame tekrar bakmasın
             RegisterThisFrameDetection(normalizedCenter, obj.label);
             return;
@@ -129,7 +129,7 @@ public class ObjectSwapManager : MonoBehaviour
         if (maxSpawnPerLabel > 0 && GetSpawnCountForLabel(obj.label) >= maxSpawnPerLabel)
         {
             return;
-        }
+            }
 
         // 5. Yeni obje spawn et
         var go = Instantiate(prefab, worldPosition, worldRotation);
@@ -169,7 +169,7 @@ public class ObjectSwapManager : MonoBehaviour
             label = label
         });
     }
-
+    
     /// <summary>
     /// DÜNYA POZİSYONUNDA aynı tipte obje var mı? (ANA KONTROL - kamera açısından bağımsız)
     /// </summary>
@@ -178,7 +178,7 @@ public class ObjectSwapManager : MonoBehaviour
         string lowerLabel = label.ToLower();
         
         foreach (var spawnInfo in spawnedObjects)
-        {
+    {
             if (spawnInfo.gameObject == null) continue;
             
             // Aynı label kontrolü
@@ -187,7 +187,7 @@ public class ObjectSwapManager : MonoBehaviour
             // Dünya mesafesi kontrolü
             float worldDist = Vector3.Distance(position, spawnInfo.worldPosition);
             if (worldDist < worldDuplicateDistance)
-            {
+        {
                 Debug.Log($"'{label}' zaten mevcut - mesafe: {worldDist:F2}m < {worldDuplicateDistance}m");
                 return true;
             }
@@ -475,11 +475,11 @@ public class ObjectSwapManager : MonoBehaviour
         for (int i = spawnedObjects.Count - 1; i >= 0; i--)
         {
             if (spawnedObjects[i].label.ToLower() == lowerLabel)
-            {
+        {
                 if (spawnedObjects[i].gameObject != null)
                     Destroy(spawnedObjects[i].gameObject);
                 spawnedObjects.RemoveAt(i);
-            }
+        }
         }
     }
 }
