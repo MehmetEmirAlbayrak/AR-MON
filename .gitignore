@@ -1,0 +1,49 @@
+# Virtual Environment
+venv/
+.venv/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+
+# Environment variables
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Logs
+*.log
+
+# Datasets (çok büyük - GitHub'a yükleme)
+*_yolo/
+biome_merged/
+biome_merged_v2/
+
+# Training outputs
+runs/
+*.cache
+
+# Pre-trained models (büyük dosyalar)
+yolo*.pt
+yolov*.pt
+
+# Archives
+*.zip
+
+# Graduation Project (ayrı repo önerilir)
+Graduation Project*/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Model outputs - sadece best.pt'yi tut
+# models/ klasörü GitHub'a gidecek
