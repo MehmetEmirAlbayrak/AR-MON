@@ -1,0 +1,92 @@
+using System.Collections.Generic;
+using UnityEngine;
+using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
+
+public class ObjectSwapManager : MonoBehaviour
+{
+    [Header("AR")]
+    public ARRaycastManager raycastManager;
+
+    [System.Serializable]
+    public class LabelPrefab
+    {
+        public string label;        // YOLO label: "tree", "rock" vs.
+        public GameObject prefab;   // Low poly prefabın (ağaç, taş...)
+    }
+
+    public List<LabelPrefab> mappings = new List<LabelPrefab>();
+
+    // Aynı objeyi iki kez oluşturmamak için
+    Dictionary<string, List<GameObject>> spawnedByLabel = new Dictionary<string, List<GameObject>>();
+
+    public void PlaceObjects(List<DetectedObject> objects)
+    {
+        if (objects == null || objects.Count == 0)
+        {
+            Debug.Log("Gelen object listesi boş.");
+            return;
+        }
+
+        foreach (var obj in objects)
+        {
+            GameObject prefab = GetPrefabForLabel(obj.label);
+            if (prefab == null)
+                continue;
+
+            // Ekrandaki normalized center -> pixel koordinatı
+            if (obj.center == null || obj.center.Length < 2)
+                continue;
+
+            float nx = obj.center[0];   // 0–1
+            float ny = obj.center[1];   // 0–1 (YOLO'dan geldiyse muhtemelen top-left origin; test ederek bakarsın)
+
+            Vector2 screenPos = new Vector2(nx * Screen.width, (1f - ny) * Screen.height);
+
+            var hits = new List<ARRaycastHit>();
+            Pose pose;
+
+            if (raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon))
+            {
+                pose = hits[0].pose;
+            }
+            else
+            {
+                // plane bulunamıyorsa kameranın önüne at
+                var cam = Camera.main;
+                pose = new Pose(
+                    cam.transform.position + cam.transform.forward * 0.7f,
+                    Quaternion.LookRotation(cam.transform.forward)
+                );
+            }
+
+            var go = Instantiate(prefab, pose.position, pose.rotation);
+            RegisterSpawn(obj.label, go);
+        }
+    }
+
+    GameObject GetPrefabForLabel(string label)
+    {
+        if (string.IsNullOrEmpty(label)) return null;
+
+        label = label.ToLower();
+
+        foreach (var map in mappings)
+        {
+            if (label.Contains(map.label.ToLower()))
+                return map.prefab;
+        }
+
+        return null;
+    }
+
+    void RegisterSpawn(string label, GameObject go)
+    {
+        if (!spawnedByLabel.TryGetValue(label, out var list))
+        {
+            list = new List<GameObject>();
+            spawnedByLabel[label] = list;
+        }
+        list.Add(go);
+    }
+}
