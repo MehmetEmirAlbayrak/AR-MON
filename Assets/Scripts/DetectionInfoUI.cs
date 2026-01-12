@@ -76,6 +76,8 @@ public class DetectionInfoUI : MonoBehaviour
         
         // Başlangıçta boş göster
         ClearDisplay();
+        
+        Debug.Log($"DetectionInfoUI başlatıldı. Instance: {Instance != null}, BiomeText: {biomeText != null}, ObjectsText: {objectsText != null}");
     }
     
     void CreateDynamicUI()

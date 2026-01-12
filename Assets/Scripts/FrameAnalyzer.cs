@@ -91,9 +91,12 @@ public class FrameAnalyzer : MonoBehaviour
             AnalyzeResult result = JsonUtility.FromJson<AnalyzeResult>(json);
             if (result == null)
             {
-                //Debug.LogError("AnalyzeResult parse fail");
+                Debug.LogError("AnalyzeResult parse fail");
                 yield break;
             }
+
+            // Debug: Sonuçları logla
+            Debug.Log($"Analiz sonucu - Biome: {result.biome}, Obje sayısı: {result.objects?.Length ?? 0}");
 
             // Biome işle
             if (biomeSpawner != null)
@@ -103,11 +106,17 @@ public class FrameAnalyzer : MonoBehaviour
             if (objectSwapManager != null && result.objects != null)
                 objectSwapManager.PlaceObjects(result.objects.ToList());
 
-            // UI güncelle
-            if (detectionUI != null)
+            // UI güncelle (singleton kullan, eğer referans atanmamışsa)
+            DetectionInfoUI ui = detectionUI != null ? detectionUI : DetectionInfoUI.Instance;
+            if (ui != null)
             {
-                detectionUI.UpdateBiome(result.biome);
-                detectionUI.UpdateDetectedObjects(result.objects?.ToList());
+                ui.UpdateBiome(result.biome);
+                ui.UpdateDetectedObjects(result.objects?.ToList());
+                Debug.Log($"UI güncellendi - Biome: {result.biome}, Objeler: {result.objects?.Length ?? 0}");
+            }
+            else
+            {
+                Debug.LogWarning("DetectionInfoUI bulunamadı! UI güncellenemiyor. Scene'de DetectionInfoUI component'i var mı kontrol edin.");
             }
             
         }
