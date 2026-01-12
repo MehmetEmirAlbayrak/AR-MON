@@ -882,11 +882,16 @@ MonoBehaviour:
     pokemonPrefab: {fileID: 9203938796069245880, guid: b100033bd257c8e479a5c0a5b148fa2c, type: 3}
   - biomeName: unknown
     pokemonPrefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
+  - biomeName: mixed
+    pokemonPrefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
   minSpawnDistance: 2
   maxSpawnDistance: 8
   minDistanceBetweenPokemons: 0.3
   spreadRadius: 1
   sizeVariation: {x: 0.7, y: 1.3}
+  minPokemonLevel: 1
+  maxPokemonLevel: 20
+  progressiveDifficulty: 1
   spawnNearDetectedObjects: 1
   objectProximityMin: 0.5
   objectProximityMax: 2
@@ -930,6 +935,15 @@ MonoBehaviour:
     realWorldHeight: 1
   - label: grass
     prefab: {fileID: 8903058273634794869, guid: f1fc5bb90ac285e4486771552d63bcb8, type: 3}
+    realWorldHeight: 1
+  - label: bush
+    prefab: {fileID: 4263922822445002727, guid: 3cdafb3c2f54d434894928d72d282874, type: 3}
+    realWorldHeight: 1
+  - label: leaf
+    prefab: {fileID: 3356751432538110193, guid: ffbddc4ef9676cc419e81e06aaa836d8, type: 3}
+    realWorldHeight: 1
+  - label: flower
+    prefab: {fileID: 5186735023776687486, guid: ac8efb728f1fb9b4092c4df591c827ca, type: 3}
     realWorldHeight: 1
   useDepthEstimation: 1
   defaultRealHeight: 1.5
@@ -1629,7 +1643,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokeballController
   pokeballPrefab: {fileID: 238189085380014438, guid: b3793c212ff95a145ac1a100e031f304, type: 3}
-  spawnPoint: {fileID: 5959822283189304875, guid: b3793c212ff95a145ac1a100e031f304, type: 3}
+  pokeballOffset: {x: 0, y: -0.5, z: 1.2}
+  pokeballScale: 0.15
+  followSpeed: 10
+  smoothFollow: 1
   minThrowForce: 3
   maxThrowForce: 15
   swipeMultiplier: 0.01
