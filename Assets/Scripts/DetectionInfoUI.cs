@@ -42,17 +42,9 @@ public class DetectionInfoUI : MonoBehaviour
     public Color highConfidenceColor = new Color(0.2f, 1f, 0.2f);
     public Color lowConfidenceColor = new Color(1f, 0.8f, 0.2f);
 
-    [Header("Dinamik UI")]
-    public bool createDynamicUI = true;
-    
     // Son güncelleme zamanı (çok sık güncellemeyi engellemek için)
     float lastUpdateTime;
     float updateInterval = 0.1f;
-    
-    // Dinamik UI elementleri
-    private Canvas uiCanvas;
-    private GameObject biomePanel;
-    private GameObject objectsPanel;
 
     void Awake()
     {
@@ -68,98 +60,59 @@ public class DetectionInfoUI : MonoBehaviour
 
     void Start()
     {
-        // Eğer referanslar atanmamışsa ve dinamik UI açıksa, oluştur
-        if (createDynamicUI && (biomeText == null || objectsText == null))
+        if (ARMON.UI.AR.ARHudCanvas.Instance == null)
         {
-            CreateDynamicUI();
+            Debug.LogWarning("[DetectionInfoUI] ARHudCanvas.Instance null — UI mount deferred.");
+            return;
         }
-        
-        // Başlangıçta boş göster
+        MountIntoHud(ARMON.UI.AR.ARHudCanvas.Instance.TopLeftSlot);
         ClearDisplay();
-        
-        Debug.Log($"DetectionInfoUI başlatıldı. Instance: {Instance != null}, BiomeText: {biomeText != null}, ObjectsText: {objectsText != null}");
     }
-    
-    void CreateDynamicUI()
+
+    void MountIntoHud(Transform slot)
     {
-        // Canvas
-        GameObject canvasObj = new GameObject("DetectionInfoCanvas");
-        canvasObj.transform.SetParent(transform);
-        uiCanvas = canvasObj.AddComponent<Canvas>();
-        uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        uiCanvas.sortingOrder = 50; // Diğer UI'lardan düşük
-        
-        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080, 1920);
-        scaler.matchWidthOrHeight = 0.5f;
-        
-        canvasObj.AddComponent<GraphicRaycaster>();
-        
-        // ============ SOL ÜST - Biome Panel ============
-        // Notch için daha aşağıda
-        biomePanel = new GameObject("BiomePanel");
-        biomePanel.transform.SetParent(canvasObj.transform, false);
-        Image biomeBg = biomePanel.AddComponent<Image>();
-        biomeBg.color = new Color(0, 0, 0, 0.7f);
-        biomeBg.raycastTarget = false;
-        
-        RectTransform biomeRect = biomePanel.GetComponent<RectTransform>();
-        biomeRect.anchorMin = new Vector2(0, 1);
-        biomeRect.anchorMax = new Vector2(0, 1);
-        biomeRect.pivot = new Vector2(0, 1);
-        biomeRect.anchoredPosition = new Vector2(15, -70); // Notch için -70
-        biomeRect.sizeDelta = new Vector2(320, 50);
-        
-        // Biome Text
-        GameObject biomeTxtObj = new GameObject("BiomeText");
-        biomeTxtObj.transform.SetParent(biomePanel.transform, false);
-        biomeText = biomeTxtObj.AddComponent<TextMeshProUGUI>();
-        biomeText.text = "Biome: Algilaniyor...";
-        biomeText.fontSize = 22; // Mobilde daha okunabilir
-        biomeText.fontStyle = FontStyles.Bold;
-        biomeText.alignment = TextAlignmentOptions.Left;
+        // One combined panel: biome line + objects line, compact.
+        GameObject panel = new GameObject("DetectionInfoPanel");
+        panel.transform.SetParent(slot, false);
+        var img = panel.AddComponent<UnityEngine.UI.Image>();
+        img.color = new Color(0f, 0f, 0f, 0.5f);
+        img.raycastTarget = false;
+
+        var rt = (RectTransform)panel.transform;
+        rt.anchorMin = new Vector2(0f, 1f);
+        rt.anchorMax = new Vector2(0f, 1f);
+        rt.pivot     = new Vector2(0f, 1f);
+        rt.anchoredPosition = Vector2.zero;
+        rt.sizeDelta = new Vector2(260f, 70f);
+
+        // Biome line (top)
+        GameObject bObj = new GameObject("BiomeText");
+        bObj.transform.SetParent(panel.transform, false);
+        biomeText = bObj.AddComponent<TMPro.TextMeshProUGUI>();
+        biomeText.fontSize = 22;
+        biomeText.fontStyle = TMPro.FontStyles.Bold;
+        biomeText.alignment = TMPro.TextAlignmentOptions.Left;
         biomeText.color = biomeColor;
         biomeText.raycastTarget = false;
-        
-        RectTransform biomeTxtRect = biomeTxtObj.GetComponent<RectTransform>();
-        biomeTxtRect.anchorMin = Vector2.zero;
-        biomeTxtRect.anchorMax = Vector2.one;
-        biomeTxtRect.offsetMin = new Vector2(12, 8);
-        biomeTxtRect.offsetMax = new Vector2(-12, -8);
-        
-        // ============ SOL ALT - Objects Panel ============
-        // Home bar için daha yukarıda
-        objectsPanel = new GameObject("ObjectsPanel");
-        objectsPanel.transform.SetParent(canvasObj.transform, false);
-        Image objectsBg = objectsPanel.AddComponent<Image>();
-        objectsBg.color = new Color(0, 0, 0, 0.7f);
-        objectsBg.raycastTarget = false;
-        
-        RectTransform objectsRect = objectsPanel.GetComponent<RectTransform>();
-        objectsRect.anchorMin = new Vector2(0, 0);
-        objectsRect.anchorMax = new Vector2(0, 0);
-        objectsRect.pivot = new Vector2(0, 0);
-        objectsRect.anchoredPosition = new Vector2(15, 100); // Home bar + ÇANTA butonu için
-        objectsRect.sizeDelta = new Vector2(350, 180);
-        
-        // Objects Text
-        GameObject objectsTxtObj = new GameObject("ObjectsText");
-        objectsTxtObj.transform.SetParent(objectsPanel.transform, false);
-        objectsText = objectsTxtObj.AddComponent<TextMeshProUGUI>();
-        objectsText.text = "Algilanan: Bekleniyor...";
-        objectsText.fontSize = 18;
-        objectsText.alignment = TextAlignmentOptions.Left;
+        var brt = (RectTransform)bObj.transform;
+        brt.anchorMin = new Vector2(0f, 0.5f);
+        brt.anchorMax = new Vector2(1f, 1f);
+        brt.offsetMin = new Vector2(10f, 0f);
+        brt.offsetMax = new Vector2(-10f, -5f);
+
+        // Object summary line (bottom)
+        GameObject oObj = new GameObject("ObjectsText");
+        oObj.transform.SetParent(panel.transform, false);
+        objectsText = oObj.AddComponent<TMPro.TextMeshProUGUI>();
+        objectsText.fontSize = 16;
+        objectsText.alignment = TMPro.TextAlignmentOptions.Left;
         objectsText.color = objectColor;
         objectsText.raycastTarget = false;
-        
-        RectTransform objectsTxtRect = objectsTxtObj.GetComponent<RectTransform>();
-        objectsTxtRect.anchorMin = Vector2.zero;
-        objectsTxtRect.anchorMax = Vector2.one;
-        objectsTxtRect.offsetMin = new Vector2(12, 8);
-        objectsTxtRect.offsetMax = new Vector2(-12, -8);
-        
-        Debug.Log("DetectionInfoUI dinamik olarak oluşturuldu (mobil uyumlu)!");
+        var ort = (RectTransform)oObj.transform;
+        ort.anchorMin = new Vector2(0f, 0f);
+        ort.anchorMax = new Vector2(1f, 0.5f);
+        ort.offsetMin = new Vector2(10f, 5f);
+        ort.offsetMax = new Vector2(-10f, 0f);
     }
 
     /// <summary>
@@ -191,59 +144,25 @@ public class DetectionInfoUI : MonoBehaviour
     /// </summary>
     public void UpdateDetectedObjects(List<DetectedObject> objects)
     {
-        if (Time.time - lastUpdateTime < updateInterval)
-            return;
-        
+        if (Time.time - lastUpdateTime < updateInterval) return;
         lastUpdateTime = Time.time;
 
         if (objects == null || objects.Count == 0)
         {
-            SetObjectsText($"{objectsPrefix}Obje bulunamadı");
+            SetObjectsText($"{objectsPrefix}0");
             return;
         }
-
-        StringBuilder sb = new StringBuilder();
-        sb.Append(objectsPrefix);
-
-        int displayCount = 0;
+        int aboveThreshold = 0;
+        string topLabel = null;
+        float topConf = 0f;
         foreach (var obj in objects)
         {
-            if (displayCount >= maxDisplayedObjects)
-            {
-                sb.Append($"\n  ... +{objects.Count - maxDisplayedObjects} daha");
-                break;
-            }
-
-            if (obj.confidence < confidenceThreshold)
-                continue;
-
-            if (displayCount > 0)
-                sb.Append("\n");
-
-            // Güven seviyesine göre renk
-            Color confColor = Color.Lerp(lowConfidenceColor, highConfidenceColor, obj.confidence);
-            string confColorHex = ColorUtility.ToHtmlStringRGB(confColor);
-
-            // Obje boyutu bilgisi
-            string sizeInfo = "";
-            if (obj.bbox != null && obj.bbox.Length >= 4)
-            {
-                float widthPercent = obj.Width * 100f;
-                float heightPercent = obj.Height * 100f;
-                sizeInfo = $" ({widthPercent:F0}%x{heightPercent:F0}%)";
-            }
-
-            sb.Append($"  • {FormatLabel(obj.label)} <color=#{confColorHex}>[{obj.confidence:P0}]</color>{sizeInfo}");
-            displayCount++;
+            if (obj.confidence < confidenceThreshold) continue;
+            aboveThreshold++;
+            if (obj.confidence > topConf) { topConf = obj.confidence; topLabel = obj.label; }
         }
-
-        if (displayCount == 0)
-        {
-            SetObjectsText($"{objectsPrefix}Düşük güvenilirlik");
-            return;
-        }
-
-        SetObjectsText(sb.ToString());
+        if (aboveThreshold == 0) { SetObjectsText($"{objectsPrefix}0"); return; }
+        SetObjectsText($"{objectsPrefix}{aboveThreshold} ({FormatLabel(topLabel)} {topConf:P0})");
     }
 
     /// <summary>
