@@ -29,10 +29,16 @@ public class PokemonData
     // Mevcut can (savaşta kullanılır)
     public int currentHealth;
 
+    [Header("Species & Evolution")]
+    public string speciesId;
+    public bool   hasEvolved;
+    public string evolvedFromSpeciesId;
+
     public PokemonData(string name, int startLevel = 1, string prefab = "")
     {
         pokemonName = name;
         prefabId = string.IsNullOrEmpty(prefab) ? name : prefab;
+        speciesId = prefabId; // initial assumption: speciesId == prefabId; explicit setters can override.
         catchDate = DateTime.Now.ToString("dd/MM/yyyy HH:mm");
         level = Mathf.Max(1, startLevel);
         currentXP = 0;
@@ -120,6 +126,34 @@ public class PokemonData
                $"Defense: {Defense}\n" +
                $"Speed: {Speed}\n" +
                $"XP: {currentXP}/{xpToNextLevel}";
+    }
+
+    public bool CanEvolve(ARMON.Data.PokemonSpecies s)
+    {
+        if (s == null) return false;
+        if (hasEvolved) return false;
+        if (s.evolutionType == ARMON.Data.EvolutionType.None) return false;
+        if (s.evolvesAtLevel <= 0) return false;
+        return level >= s.evolvesAtLevel;
+    }
+
+    public void Evolve(ARMON.Data.PokemonSpecies s)
+    {
+        if (!CanEvolve(s)) return;
+
+        baseAttack  = Mathf.RoundToInt(baseAttack  * 1.30f);
+        baseHealth  = Mathf.RoundToInt(baseHealth  * 1.30f);
+        baseDefense = Mathf.RoundToInt(baseDefense * 1.30f);
+        baseSpeed   = Mathf.RoundToInt(baseSpeed   * 1.30f);
+        currentHealth = Health;
+
+        if (s.evolutionType == ARMON.Data.EvolutionType.NewPrefab && s.evolutionPrefab != null)
+            prefabId = s.evolutionPrefab.name;
+
+        evolvedFromSpeciesId = speciesId;
+        hasEvolved = true;
+
+        Debug.Log($"{pokemonName} evolved from {evolvedFromSpeciesId}");
     }
 }
 
