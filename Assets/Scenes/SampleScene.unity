@@ -133,6 +133,7 @@ GameObject:
   - component: {fileID: 27240823}
   - component: {fileID: 27240822}
   - component: {fileID: 27240821}
+  - component: {fileID: 27240826}
   m_Layer: 0
   m_Name: Main Camera
   m_TagString: MainCamera
@@ -348,6 +349,23 @@ Camera:
   m_OcclusionCulling: 1
   m_StereoConvergence: 10
   m_StereoSeparation: 0.022
+--- !u!114 &27240826
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 27240819}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: b15f82cc229284894964d2d30806969d, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.AROcclusionManager
+  m_HumanSegmentationStencilMode: 3
+  m_HumanSegmentationDepthMode: 2
+  m_EnvironmentDepthMode: 3
+  m_EnvironmentDepthTemporalSmoothing: 1
+  m_OcclusionPreferenceMode: 0
 --- !u!1 &145726376
 GameObject:
   m_ObjectHideFlags: 0
@@ -747,6 +765,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -871,19 +890,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6480e564229b5413193bf2353225d49d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
+  registry: {fileID: 0}
   raycastManager: {fileID: 692674514}
-  objectSwapManager: {fileID: 0}
-  biomeEntries:
-  - biomeName: forest
-    pokemonPrefab: {fileID: 3985757784934188552, guid: 04b2d16e1c1a3ff44b840552be5592c0, type: 3}
-  - biomeName: grassland
-    pokemonPrefab: {fileID: 4528888763381533394, guid: 0e984e923d84c6644a3633bbbc1127b9, type: 3}
-  - biomeName: rocky
-    pokemonPrefab: {fileID: 9203938796069245880, guid: b100033bd257c8e479a5c0a5b148fa2c, type: 3}
-  - biomeName: unknown
-    pokemonPrefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
-  - biomeName: mixed
-    pokemonPrefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
+  anchorManager: {fileID: 0}
+  planeManager: {fileID: 0}
+  objectSwapManager: {fileID: 624609466}
   minSpawnDistance: 2
   maxSpawnDistance: 8
   minDistanceBetweenPokemons: 0.3
@@ -925,38 +936,37 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   raycastManager: {fileID: 692674514}
-  occlusionManager: {fileID: 0}
+  anchorManager: {fileID: 692674516}
+  planeManager: {fileID: 692674515}
   mappings:
   - label: tree
     prefab: {fileID: 2222111361404534124, guid: 88f2fd29f58b9734683512546acec310, type: 3}
-    realWorldHeight: 1
+    realWorldHeight: 4
   - label: rock
     prefab: {fileID: 7405846476849542632, guid: c6308cb7062fac34e8e50600086b12a1, type: 3}
-    realWorldHeight: 1
+    realWorldHeight: 0.5
   - label: grass
     prefab: {fileID: 8903058273634794869, guid: f1fc5bb90ac285e4486771552d63bcb8, type: 3}
-    realWorldHeight: 1
+    realWorldHeight: 0.3
   - label: bush
     prefab: {fileID: 4263922822445002727, guid: 3cdafb3c2f54d434894928d72d282874, type: 3}
     realWorldHeight: 1
   - label: leaf
-    prefab: {fileID: 3356751432538110193, guid: ffbddc4ef9676cc419e81e06aaa836d8, type: 3}
-    realWorldHeight: 1
-  - label: flower
-    prefab: {fileID: 5186735023776687486, guid: ac8efb728f1fb9b4092c4df591c827ca, type: 3}
-    realWorldHeight: 1
-  useDepthEstimation: 1
-  defaultRealHeight: 1.5
-  minDepth: 0.5
-  maxDepth: 15
-  multiRaycastRadius: 100
-  multiRaycastPoints: 8
-  referenceDistance: 1
-  minObjectSize: 0.1
-  maxObjectSize: 3
-  worldDuplicateDistance: 1
-  sameFrameScreenThreshold: 0.03
-  maxSpawnPerLabel: 0
+    prefab: {fileID: 38335279662140195, guid: 34d3f526198dae440bb2ce6005d86055, type: 3}
+    realWorldHeight: 0.2
+  depthNearMeters: 0.5
+  depthFarMeters: 8
+  fallbackMeters: 2.5
+  assumedGroundOffsetY: 1.5
+  candidateConfirmCount: 2
+  candidateWindowSeconds: 4
+  minCellSize: 0.3
+  minObjectHeight: 0.05
+  maxObjectHeight: 10
+  mappingOverridesBboxSize: 0
+  despawnDistance: 4
+  despawnStaleSeconds: 15
+  despawnCheckInterval: 1
 --- !u!1 &692674511
 GameObject:
   m_ObjectHideFlags: 0
@@ -968,6 +978,8 @@ GameObject:
   - component: {fileID: 692674513}
   - component: {fileID: 692674512}
   - component: {fileID: 692674514}
+  - component: {fileID: 692674515}
+  - component: {fileID: 692674516}
   m_Layer: 0
   m_Name: XR Origin
   m_TagString: Untagged
@@ -1024,6 +1036,39 @@ MonoBehaviour:
     m_PersistentCalls:
       m_Calls: []
   m_RaycastPrefab: {fileID: 0}
+--- !u!114 &692674515
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 692674511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: e1760703bbd54c04488a8d10600262ab, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARPlaneManager
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  m_PlanePrefab: {fileID: 0}
+  m_DetectionMode: 3
+--- !u!114 &692674516
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 692674511}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 728ad7fae8e460a4ba41265c7308d757, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Unity.XR.ARFoundation::UnityEngine.XR.ARFoundation.ARAnchorManager
+  <trackablesChanged>k__BackingField:
+    m_PersistentCalls:
+      m_Calls: []
+  m_AnchorPrefab: {fileID: 0}
 --- !u!1 &705507993
 GameObject:
   m_ObjectHideFlags: 0
@@ -1049,14 +1094,14 @@ Light:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 705507993}
   m_Enabled: 1
-  serializedVersion: 11
+  serializedVersion: 13
   m_Type: 1
   m_Color: {r: 1, g: 0.95686275, b: 0.8392157, a: 1}
   m_Intensity: 1
   m_Range: 10
   m_SpotAngle: 30
   m_InnerSpotAngle: 21.802082
-  m_CookieSize: 10
+  m_CookieSize2D: {x: 10, y: 10}
   m_Shadows:
     m_Type: 2
     m_Resolution: -1
@@ -1101,7 +1146,7 @@ Light:
   m_UseBoundingSphereOverride: 0
   m_UseViewFrustumForShadowCasterCull: 1
   m_ForceVisible: 0
-  m_ShadowRadius: 0
+  m_ShapeRadius: 0
   m_ShadowAngle: 0
   m_LightUnit: 1
   m_LuxAtDistance: 1
@@ -1245,6 +1290,7 @@ Canvas:
   m_OverridePixelPerfect: 0
   m_SortingBucketNormalizedSize: 0
   m_VertexColorAlwaysGammaSpace: 0
+  m_UseReflectionProbes: 0
   m_AdditionalShaderChannelsFlag: 25
   m_UpdateRectTransformForStandalone: 0
   m_SortingLayerID: 0
@@ -1284,6 +1330,10 @@ MonoBehaviour:
   spawnHeight: 0
   attackRange: 3
   attackCooldown: 1.5
+  anchorManager: {fileID: 692674516}
+  raycastManager: {fileID: 692674514}
+  planeManager: {fileID: 692674515}
+  registry: {fileID: 0}
 --- !u!4 &803085205
 Transform:
   m_ObjectHideFlags: 0
@@ -1394,6 +1444,7 @@ MonoBehaviour:
   m_VerticalAlignment: 512
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1772,6 +1823,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -1900,6 +1952,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2057,6 +2110,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2307,6 +2361,7 @@ MonoBehaviour:
   m_VerticalAlignment: 256
   m_textAlignment: 65535
   m_characterSpacing: 0
+  m_characterHorizontalScale: 1
   m_wordSpacing: 0
   m_lineSpacing: 0
   m_lineSpacingMax: 0
@@ -2399,6 +2454,12 @@ MonoBehaviour:
   pokemonPrefabs:
   - pokemonId: Little_Ghost_ZOMbi (6)
     prefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
+  - pokemonId: Little_Ghost_ZOMbi (7)
+    prefab: {fileID: 3985757784934188552, guid: 04b2d16e1c1a3ff44b840552be5592c0, type: 3}
+  - pokemonId: Little_Ghost_ZOMbi (9)
+    prefab: {fileID: 4528888763381533394, guid: 0e984e923d84c6644a3633bbbc1127b9, type: 3}
+  - pokemonId: Little_Ghost_ZOMbi (2)
+    prefab: {fileID: 9203938796069245880, guid: b100033bd257c8e479a5c0a5b148fa2c, type: 3}
 --- !u!4 &1867156327
 Transform:
   m_ObjectHideFlags: 0

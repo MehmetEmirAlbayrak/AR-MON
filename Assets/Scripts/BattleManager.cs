@@ -1,5 +1,7 @@
 using UnityEngine;
 using System.Collections;
+using UnityEngine.XR.ARFoundation;
+using ARMON.Data;
 
 public class BattleManager : MonoBehaviour
 {
@@ -16,6 +18,14 @@ public class BattleManager : MonoBehaviour
     [Header("Savaş Ayarları")]
     public float attackRange = 1.5f; // Saldırı menzili - yakın mesafe
     public float attackCooldown = 1.5f; // Saldırılar arası bekleme
+
+    [Header("AR References")]
+    public ARAnchorManager  anchorManager;
+    public ARRaycastManager raycastManager;
+    public ARPlaneManager   planeManager;
+
+    [Header("Data")]
+    public PokemonSpeciesRegistry registry;
     
     // Mevcut savaşan Pokemon
     private GameObject currentPlayerPokemon;
@@ -219,7 +229,7 @@ public class BattleManager : MonoBehaviour
         
         // Controller ekle
         currentController = currentPlayerPokemon.AddComponent<PlayerPokemonController>();
-        currentController.Initialize(pokemonData, bagIndex, this);
+        currentController.Initialize(pokemonData, bagIndex, this, anchorManager, raycastManager, planeManager);
         
         currentPokemonIndex = bagIndex;
         

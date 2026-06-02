@@ -1,6 +1,8 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using UnityEngine.XR.ARFoundation;
+using ARMON.AR;
 
 public class PlayerPokemonController : MonoBehaviour
 {
@@ -36,7 +38,14 @@ public class PlayerPokemonController : MonoBehaviour
     // Collider for click detection
     private Collider pokemonCollider;
 
-    public void Initialize(PokemonData data, int index, BattleManager manager)
+    private ARAnchorManager  anchorManager;
+    private ARRaycastManager raycastManager;
+    private ARPlaneManager   planeManager;
+    private ARAnchor         currentAnchor;
+    private ARPositionResolver resolver;
+
+    public void Initialize(PokemonData data, int index, BattleManager manager,
+        ARAnchorManager am, ARRaycastManager rm, ARPlaneManager pm)
     {
         pokemonData = data;
         bagIndex = index;
@@ -45,14 +54,14 @@ public class PlayerPokemonController : MonoBehaviour
         cameraTransform = Camera.main.transform;
         hasCommand = false;
         currentTarget = null;
-        
-        // BattleManager'dan ayarları al
-        if (battleManager != null)
-        {
-            attackRange = battleManager.attackRange;
-        }
-        
-        // Click detection için collider ekle
+
+        anchorManager = am;
+        raycastManager = rm;
+        planeManager = pm;
+        resolver = new ARPositionResolver();
+
+        if (battleManager != null) attackRange = battleManager.attackRange;
+
         pokemonCollider = GetComponent<Collider>();
         if (pokemonCollider == null)
         {
@@ -61,9 +70,39 @@ public class PlayerPokemonController : MonoBehaviour
             sphere.isTrigger = true;
             pokemonCollider = sphere;
         }
-        
+
+        AnchorToWorld();
         CreateUI();
         UpdateUI();
+    }
+
+    void AnchorToWorld()
+    {
+        if (currentAnchor != null)
+        {
+            ARAnchorUtil.DestroyAnchor(currentAnchor);
+            currentAnchor = null;
+        }
+        if (resolver == null) return;
+        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        if (!resolver.TryResolve(screenCenter, 0f, raycastManager, planeManager, out var r))
+            return;
+        currentAnchor = ARAnchorUtil.CreateAnchor(r, anchorManager,
+            $"OwnedAnchor_{(pokemonData != null ? pokemonData.pokemonName : "?")}");
+        transform.SetParent(currentAnchor.transform, worldPositionStays: false);
+        transform.localPosition = Vector3.zero;
+        transform.localRotation = Quaternion.identity;
+    }
+
+    void DetachAnchorForChase()
+    {
+        if (currentAnchor == null) return;
+        transform.SetParent(null, worldPositionStays: true);
+    }
+
+    void ReanchorAfterChase()
+    {
+        AnchorToWorld();
     }
 
     void Update()
@@ -74,25 +113,20 @@ public class PlayerPokemonController : MonoBehaviour
             if (cameraTransform == null) return;
         }
         
-        // Hedef kontrolü - sadece emir verildiyse
         if (hasCommand && currentTarget != null)
         {
-            // Hedef öldüyse emri iptal et
             if (currentTarget.IsFainted)
             {
                 ClearTarget();
+                ReanchorAfterChase();
             }
             else
             {
+                DetachAnchorForChase();
                 ChaseAndAttack();
             }
         }
-        else
-        {
-            // Emir yoksa oyuncuyu takip et
-            FollowPlayer();
-        }
-        
+
         UpdateUIPosition();
     }
 
@@ -126,31 +160,6 @@ public class PlayerPokemonController : MonoBehaviour
     /// Aktif hedef var mı?
     /// </summary>
     public bool HasTarget => hasCommand && currentTarget != null;
-
-    void FollowPlayer()
-    {
-        isChasing = false;
-        
-        // Kameranın arkasında ve biraz önünde pozisyon hesapla
-        Vector3 cameraForward = cameraTransform.forward;
-        cameraForward.y = 0;
-        cameraForward.Normalize();
-        
-        // Kameranın önünde, biraz sağda pozisyon
-        Vector3 targetPos = cameraTransform.position + cameraForward * followDistance;
-        targetPos.y = heightOffset;
-        
-        // Yumuşak takip
-        Vector3 newPos = Vector3.Lerp(transform.position, targetPos, followSpeed * Time.deltaTime);
-        transform.position = newPos;
-        
-        // Kameranın baktığı yöne bak
-        if (cameraForward != Vector3.zero)
-        {
-            Quaternion targetRot = Quaternion.LookRotation(cameraForward);
-            transform.rotation = Quaternion.Slerp(transform.rotation, targetRot, rotationSpeed * Time.deltaTime);
-        }
-    }
 
     void ChaseAndAttack()
     {
