@@ -112,14 +112,10 @@ public class BiomePokemonSpawner : MonoBehaviour
             return;
         }
 
-        // Farklı bir biome algılandıysa eski Pokemonları temizle
+        // Biyom değiştiğinde pokemonları silme - pokemonlar kalıcı olarak kalacak
         if (currentBiome != normalizedBiome)
         {
-            if (currentPokemons.Count > 0)
-            {
-                Debug.Log($"Biome değişti: {currentBiome} -> {normalizedBiome}, eski Pokemonlar kaldırılıyor.");
-                ClearCurrentPokemons();
-            }
+            Debug.Log($"Biome değişti: {currentBiome} -> {normalizedBiome}, pokemonlar korunuyor.");
             currentBiome = normalizedBiome;
         }
 
@@ -160,9 +156,8 @@ public class BiomePokemonSpawner : MonoBehaviour
         // Pokemon oluştur
         GameObject pokemon = Instantiate(prefab, finalPosition, finalRotation);
         
-        // Rastgele boyut varyasyonu uygula
-        float randomScale = Random.Range(sizeVariation.x, sizeVariation.y);
-        pokemon.transform.localScale *= randomScale;
+        // Pokemon boyutu sabit kalacak (prefab'ın orijinal boyutu)
+        // Boyut varyasyonu kaldırıldı - sadece yerleştirilen objelerin boyutu değişecek
         
         // Level ayarla
         SetPokemonLevel(pokemon);
@@ -198,8 +193,8 @@ public class BiomePokemonSpawner : MonoBehaviour
         float ny = randomObj.center[1];
         Vector2 screenPos = new Vector2(nx * Screen.width, (1f - ny) * Screen.height);
         
-        // Objenin derinliğini tahmin et (bbox boyutundan)
-        float estimatedDepth = EstimateDepthFromBbox(randomObj);
+        // Objenin derinliğini server'dan al (MiDaS); yoksa bbox'tan tahmin et
+        float estimatedDepth = EstimateDepthFromDetection(randomObj);
         
         // AR plane bul
         var hits = new List<ARRaycastHit>();
@@ -327,22 +322,28 @@ public class BiomePokemonSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// Bbox boyutundan derinlik tahmini
+    /// Derinlik tahmini: server MiDaS depth'i varsa onu, yoksa bbox'tan tahmin.
+    /// Server depth: 1=çok yakın, 0=uzak.
     /// </summary>
-    float EstimateDepthFromBbox(DetectedObject obj)
+    float EstimateDepthFromDetection(DetectedObject obj)
     {
-        if (obj.bbox == null || obj.bbox.Length < 4)
+        // 1) Server depth (MiDaS) — en güvenilir kaynak
+        if (obj != null && obj.depth > 0.001f)
+        {
+            float d = Mathf.Clamp01(obj.depth);
+            return Mathf.Lerp(maxSpawnDistance, minSpawnDistance, d);
+        }
+
+        // 2) bbox fallback
+        if (obj == null || obj.bbox == null || obj.bbox.Length < 4)
             return (minSpawnDistance + maxSpawnDistance) / 2f;
-        
+
         float bboxHeight = obj.Height;
-        
         if (bboxHeight <= 0.01f)
             return maxSpawnDistance;
-        
-        // Basit tahmin: büyük bbox = yakın, küçük bbox = uzak
-        // bboxHeight 0.5 -> yakın (2m), bboxHeight 0.05 -> uzak (8m)
+
+        // bboxHeight 0.5 -> yakın, 0.05 -> uzak
         float depth = Mathf.Lerp(maxSpawnDistance, minSpawnDistance, bboxHeight * 2f);
-        
         return Mathf.Clamp(depth, minSpawnDistance, maxSpawnDistance);
     }
 
