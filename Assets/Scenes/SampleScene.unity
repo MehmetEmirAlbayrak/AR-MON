@@ -634,7 +634,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 346bad029ccccb34883e249778c14bf6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokemonDetailUI
-  registry: {fileID: 0}
+  registry: {fileID: 11400000, guid: 58a182ef7bf47c54893f542e361207ec, type: 2}
 --- !u!114 &355663340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -891,10 +891,10 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 6480e564229b5413193bf2353225d49d, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  registry: {fileID: 0}
+  registry: {fileID: 11400000, guid: 58a182ef7bf47c54893f542e361207ec, type: 2}
   raycastManager: {fileID: 692674514}
-  anchorManager: {fileID: 0}
-  planeManager: {fileID: 0}
+  anchorManager: {fileID: 692674516}
+  planeManager: {fileID: 692674515}
   objectSwapManager: {fileID: 624609466}
   minSpawnDistance: 2
   maxSpawnDistance: 8
@@ -1334,7 +1334,7 @@ MonoBehaviour:
   anchorManager: {fileID: 692674516}
   raycastManager: {fileID: 692674514}
   planeManager: {fileID: 692674515}
-  registry: {fileID: 0}
+  registry: {fileID: 11400000, guid: 58a182ef7bf47c54893f542e361207ec, type: 2}
   beamPrefab: {fileID: 4599044750637465947, guid: 1e6336fa63717fd45ae74fce4aaeb1f0, type: 3}
 --- !u!4 &803085205
 Transform:
