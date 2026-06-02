@@ -74,6 +74,13 @@ public class PlayerPokemonController : MonoBehaviour
         AnchorToWorld();
         CreateUI();
         UpdateUI();
+
+        // Apply evolved visual (no-op if not evolved or NewPrefab mode)
+        if (battleManager != null && battleManager.registry != null && pokemonData != null)
+        {
+            var sp = battleManager.registry.GetById(pokemonData.speciesId);
+            ARMON.Data.EvolutionVisual.Apply(gameObject, pokemonData, sp);
+        }
     }
 
     void AnchorToWorld()
