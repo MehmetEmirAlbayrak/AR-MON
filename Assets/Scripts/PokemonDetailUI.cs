@@ -1,6 +1,7 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ARMON.Data;
 
 /// <summary>
 /// Pokemon detay sayfası - envanterde Pokemon'a tıklayınca açılır
@@ -25,7 +26,16 @@ public class PokemonDetailUI : MonoBehaviour
     private Button closeButton;
     private Button releaseButton;
     private Button summonButton;
-    
+
+    [Header("Evolution")]
+    public PokemonSpeciesRegistry registry;
+
+    private Button evolveButton;
+    private GameObject evolveConfirmPanel;
+    private TextMeshProUGUI evolveConfirmText;
+    private Button evolveConfirmYes;
+    private Button evolveConfirmNo;
+
     private PokemonData currentPokemon;
     private int currentIndex = -1;
     private bool isOpen = false;
@@ -86,7 +96,7 @@ public class PokemonDetailUI : MonoBehaviour
         contentRect.anchorMin = new Vector2(0.5f, 0.5f);
         contentRect.anchorMax = new Vector2(0.5f, 0.5f);
         contentRect.pivot = new Vector2(0.5f, 0.5f);
-        contentRect.sizeDelta = new Vector2(620, 850); // Daha büyük
+        contentRect.sizeDelta = new Vector2(620, 925); // Daha büyük
         
         // ===== BAŞLIK =====
         nameText = CreateText(contentBox.transform, "NameText", "", 40, FontStyles.Bold, TextAlignmentOptions.Center);
@@ -150,18 +160,72 @@ public class PokemonDetailUI : MonoBehaviour
         prefabIdText.color = new Color(0.4f, 0.4f, 0.4f);
         
         // ===== BUTONLAR ===== (Mobil için büyütüldü)
-        // Çağır butonu (en üstte, belirgin)
-        summonButton = CreateButton(contentBox.transform, "SummonBtn", "SAVAS!", new Color(0.8f, 0.5f, 0.1f), 620);
+        // Evrim butonu (registry'den species lookup, sadece eligible ise görünür)
+        evolveButton = CreateButton(contentBox.transform, "EvolveBtn", "EVRIMLES", new Color(0.85f, 0.65f, 0.15f), 620);
+        evolveButton.onClick.AddListener(OnEvolveButton);
+
+        // Çağır butonu
+        summonButton = CreateButton(contentBox.transform, "SummonBtn", "SAVAS!", new Color(0.8f, 0.5f, 0.1f), 695);
         summonButton.onClick.AddListener(OnSummonClicked);
-        
+
         // Serbest bırak butonu
-        releaseButton = CreateButton(contentBox.transform, "ReleaseBtn", "SERBEST BIRAK", new Color(0.7f, 0.3f, 0.2f), 695);
+        releaseButton = CreateButton(contentBox.transform, "ReleaseBtn", "SERBEST BIRAK", new Color(0.7f, 0.3f, 0.2f), 770);
         releaseButton.onClick.AddListener(OnReleaseClicked);
-        
+
         // Kapat butonu
-        closeButton = CreateButton(contentBox.transform, "CloseBtn", "KAPAT", new Color(0.4f, 0.4f, 0.5f), 770);
+        closeButton = CreateButton(contentBox.transform, "CloseBtn", "KAPAT", new Color(0.4f, 0.4f, 0.5f), 845);
         closeButton.onClick.AddListener(Close);
-        
+
+        // ===== EVRIM ONAY PANELI =====
+        evolveConfirmPanel = new GameObject("EvolveConfirmPanel");
+        evolveConfirmPanel.transform.SetParent(canvasObj.transform, false);
+        Image confirmOverlay = evolveConfirmPanel.AddComponent<Image>();
+        confirmOverlay.color = new Color(0f, 0f, 0f, 0.85f);
+        RectTransform confirmOverlayRect = evolveConfirmPanel.GetComponent<RectTransform>();
+        confirmOverlayRect.anchorMin = Vector2.zero;
+        confirmOverlayRect.anchorMax = Vector2.one;
+        confirmOverlayRect.sizeDelta = Vector2.zero;
+
+        GameObject confirmBox = new GameObject("ConfirmBox");
+        confirmBox.transform.SetParent(evolveConfirmPanel.transform, false);
+        Image confirmBg = confirmBox.AddComponent<Image>();
+        confirmBg.color = new Color(0.15f, 0.17f, 0.22f, 1f);
+        RectTransform confirmBoxRect = confirmBox.GetComponent<RectTransform>();
+        confirmBoxRect.anchorMin = new Vector2(0.5f, 0.5f);
+        confirmBoxRect.anchorMax = new Vector2(0.5f, 0.5f);
+        confirmBoxRect.pivot = new Vector2(0.5f, 0.5f);
+        confirmBoxRect.sizeDelta = new Vector2(520, 280);
+
+        evolveConfirmText = CreateText(confirmBox.transform, "ConfirmText",
+            "Evrim onayi", 28, FontStyles.Bold, TextAlignmentOptions.Center);
+        SetRectTransform(evolveConfirmText.rectTransform,
+            new Vector2(0, 1), new Vector2(1, 1), new Vector2(0.5f, 1),
+            new Vector2(0, -40), new Vector2(-40, 120));
+        evolveConfirmText.color = new Color(1f, 0.9f, 0.5f);
+
+        evolveConfirmYes = CreateButton(confirmBox.transform, "YesBtn", "EVET",
+            new Color(0.2f, 0.65f, 0.3f), 180);
+        evolveConfirmYes.onClick.AddListener(OnEvolveConfirm);
+        // Shift Yes to left half
+        RectTransform yesRect = evolveConfirmYes.GetComponent<RectTransform>();
+        yesRect.anchorMin = new Vector2(0, 1);
+        yesRect.anchorMax = new Vector2(0.5f, 1);
+        yesRect.pivot = new Vector2(0.5f, 1);
+        yesRect.anchoredPosition = new Vector2(0, -180);
+        yesRect.sizeDelta = new Vector2(-30, 65);
+
+        evolveConfirmNo = CreateButton(confirmBox.transform, "NoBtn", "HAYIR",
+            new Color(0.7f, 0.3f, 0.25f), 180);
+        evolveConfirmNo.onClick.AddListener(() => evolveConfirmPanel.SetActive(false));
+        RectTransform noRect = evolveConfirmNo.GetComponent<RectTransform>();
+        noRect.anchorMin = new Vector2(0.5f, 1);
+        noRect.anchorMax = new Vector2(1, 1);
+        noRect.pivot = new Vector2(0.5f, 1);
+        noRect.anchoredPosition = new Vector2(0, -180);
+        noRect.sizeDelta = new Vector2(-30, 65);
+
+        evolveConfirmPanel.SetActive(false);
+
         // Başlangıçta gizle
         detailPanel.SetActive(false);
         
@@ -300,6 +364,38 @@ public class PokemonDetailUI : MonoBehaviour
         bool canSummon = !currentPokemon.IsFainted;
         summonButton.interactable = canSummon;
         summonButton.GetComponent<Image>().color = canSummon ? new Color(0.8f, 0.5f, 0.1f) : new Color(0.3f, 0.3f, 0.3f);
+
+        RefreshEvolveButton();
+    }
+
+    PokemonSpecies CurrentSpecies()
+        => registry != null && currentPokemon != null ? registry.GetById(currentPokemon.speciesId) : null;
+
+    void RefreshEvolveButton()
+    {
+        if (evolveButton == null) return;
+        var sp = CurrentSpecies();
+        bool can = sp != null && currentPokemon != null && currentPokemon.CanEvolve(sp);
+        evolveButton.gameObject.SetActive(can);
+    }
+
+    void OnEvolveButton()
+    {
+        var sp = CurrentSpecies();
+        if (sp == null || currentPokemon == null) return;
+        if (evolveConfirmText != null)
+            evolveConfirmText.text = $"{currentPokemon.pokemonName} evrim gecirsin mi?";
+        if (evolveConfirmPanel != null) evolveConfirmPanel.SetActive(true);
+    }
+
+    void OnEvolveConfirm()
+    {
+        var sp = CurrentSpecies();
+        if (sp == null || currentPokemon == null) return;
+        currentPokemon.Evolve(sp);
+        if (PokemonBag.Instance != null) PokemonBag.Instance.SaveInventory();
+        if (evolveConfirmPanel != null) evolveConfirmPanel.SetActive(false);
+        UpdateUI();
     }
     
     /// <summary>
