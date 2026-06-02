@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 31082a206709f874c82697aaee644226, type: 3}
+  m_Name: SpeciesRegistry
+  m_EditorClassIdentifier: Assembly-CSharp::ARMON.Data.PokemonSpeciesRegistry
+  allSpecies:
+  - {fileID: 11400000, guid: eef5a0a02456d2a4a80832a800da4211, type: 2}
+  - {fileID: 11400000, guid: e87be84eff369994a93831e10efe881a, type: 2}
+  - {fileID: 11400000, guid: 9b49a63b58228524783ffc7864090e15, type: 2}
+  - {fileID: 11400000, guid: 6a3b8c1b9c90efe40bd584c36244930d, type: 2}
+  - {fileID: 11400000, guid: 3521debfba6a5144e9646d0aec0bbb7d, type: 2}
+  - {fileID: 11400000, guid: ff72cdb00ec71be47944f8f1055ae1a9, type: 2}
+  - {fileID: 11400000, guid: 8264bf87b169eac4fb68d15752043e8d, type: 2}
+  - {fileID: 11400000, guid: f33146c7e1f747d4c8103da1009cf697, type: 2}
+  - {fileID: 11400000, guid: 541fdb7b622ef6c48a5a34d83cbb83e4, type: 2}
+  - {fileID: 11400000, guid: c472b57b518c6d947a43bc67bc05c4f4, type: 2}
+  - {fileID: 11400000, guid: fa59b0fd20ba29f44b3b39b864cea465, type: 2}
+  - {fileID: 11400000, guid: 9f959dbc2693ab1428b07f42def3a2a8, type: 2}
+  - {fileID: 11400000, guid: f60d907b5b91206438b2940f767f0611, type: 2}
+  biomePools:
+  - {fileID: 11400000, guid: 346f22404b32fe54b95c765b783a3de8, type: 2}
+  - {fileID: 11400000, guid: 36445118e3ff9994a8963942a4e97e8d, type: 2}
+  - {fileID: 11400000, guid: f31c8261efdfd1944b29fa7e45217f25, type: 2}
+  - {fileID: 11400000, guid: 9c3de5af5f0f9704b89599d2a54a81e6, type: 2}
+  - {fileID: 11400000, guid: 60374293bea1de543908d88c385c4d63, type: 2}
