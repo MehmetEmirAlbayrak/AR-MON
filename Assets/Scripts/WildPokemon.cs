@@ -6,6 +6,7 @@ public class WildPokemon : MonoBehaviour
     [Header("Pokemon Bilgileri")]
     // Stub: populated by spawner; full usage lands in Task 3.2.
     public PokemonSpecies species;
+    public int failedCatchAttempts = 0;
     public string pokemonName;
     public int level = 0; // 0 = rastgele level atanacak
     public int minLevel = 1;
@@ -212,32 +213,38 @@ public class WildPokemon : MonoBehaviour
     public bool IsFainted => currentHealth <= 0;
     
     // Level'e göre yakalama şansını hesapla
-    public float GetCatchRate()
+    public float GetCatchRate(float ballMultiplier = 1f)
     {
-        // Level arttıkça yakalama zorlaşır
-        // Can azaldıkça yakalama kolaylaşır
+        float speciesBase = species != null ? species.catchRateBase : baseCatchRate;
+
         float levelPenalty = 1f - (level - 1) * 0.07f;
         levelPenalty = Mathf.Clamp(levelPenalty, 0.15f, 1f);
-        
-        // Can bonusu: düşük can = daha kolay yakalama
-        float healthPercent = (float)currentHealth / maxHealth;
-        float healthBonus = 1f + (1f - healthPercent) * 0.5f; // Can düştükçe %50'ye kadar bonus
-        
-        float finalCatchRate = baseCatchRate * levelPenalty * healthBonus;
-        finalCatchRate = Mathf.Clamp01(finalCatchRate);
-        
-        return finalCatchRate;
+
+        float healthPercent = (float)currentHealth / Mathf.Max(1, maxHealth);
+        float healthBonus = 1f + (1f - healthPercent) * 0.5f;
+
+        float rate = speciesBase * levelPenalty * healthBonus * Mathf.Max(0.1f, ballMultiplier);
+        return Mathf.Clamp01(rate);
     }
-    
+
     // Yakalama denemesi
-    public bool TryCatch()
+    public bool TryCatch(float ballMultiplier)
     {
-        float catchRate = GetCatchRate();
+        float catchRate = GetCatchRate(ballMultiplier);
         float roll = Random.value;
-        
-        float healthPercent = (float)currentHealth / maxHealth * 100f;
-        Debug.Log($"Yakalama denemesi - {pokemonName} Lv.{level}, HP: %{healthPercent:F0}, Şans: %{(catchRate * 100):F1}");
-        
-        return roll <= catchRate;
+        bool ok = roll <= catchRate;
+        if (!ok) failedCatchAttempts++;
+        Debug.Log($"Catch attempt {pokemonName} Lv.{level} HP%={(currentHealth*100f/maxHealth):F0} rate={(catchRate*100f):F1}% roll={roll:F2} ok={ok} fails={failedCatchAttempts}");
+        return ok;
+    }
+
+    public bool TryCatch() => TryCatch(1f);
+
+    public bool ShouldEscape()
+    {
+        if (species == null || species.rarity != Rarity.Legendary) return false;
+        if (failedCatchAttempts >= 4) return true;
+        if (failedCatchAttempts == 3) return Random.value < 0.5f;
+        return false;
     }
 }
