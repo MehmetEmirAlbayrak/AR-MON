@@ -118,56 +118,64 @@ public class PokeballController : MonoBehaviour
     
     void CreateUI()
     {
-        // Canvas oluştur
-        GameObject canvasObj = new GameObject("PokeballSelectCanvas");
-        uiCanvas = canvasObj.AddComponent<Canvas>();
-        uiCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-        uiCanvas.sortingOrder = 90; // Envanter UI'dan düşük
-        
-        CanvasScaler scaler = canvasObj.AddComponent<CanvasScaler>();
-        scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
-        scaler.referenceResolution = new Vector2(1080, 1920);
-        scaler.matchWidthOrHeight = 0.5f;
-        
-        canvasObj.AddComponent<GraphicRaycaster>();
-        
-        // Pokeball seçim butonu - SOL alt köşe (çanta sağda olduğu için)
-        // Mobil için home bar'dan uzak ve daha büyük
+        if (ARMON.UI.AR.ARHudCanvas.Instance == null)
+        {
+            Debug.LogWarning("[PokeballController] ARHudCanvas.Instance null — pokeball UI deferred.");
+            return;
+        }
+        uiCanvas = ARMON.UI.AR.ARHudCanvas.Instance.GetComponent<Canvas>();
+
+        // Container for pokeball-select widgets, anchored to bottom-center of HUD.
+        GameObject container = new GameObject("PokeballSelectGroup", typeof(RectTransform));
+        container.transform.SetParent(ARMON.UI.AR.ARHudCanvas.Instance.BottomCenterSlot, false);
+        var crt = (RectTransform)container.transform;
+        crt.anchorMin = new Vector2(0.5f, 0f);
+        crt.anchorMax = new Vector2(0.5f, 0f);
+        crt.pivot     = new Vector2(0.5f, 0f);
+        crt.anchoredPosition = Vector2.zero;
+        crt.sizeDelta = new Vector2(260f, 110f);
+
+        BuildPokeballWidgets(container.transform);
+    }
+
+    void BuildPokeballWidgets(Transform parent)
+    {
+        // Pokeball seçim butonu — HUD bottom-center container içinde merkezde
         selectButton = new GameObject("PokeballSelectBtn");
-        selectButton.transform.SetParent(canvasObj.transform, false);
-        
+        selectButton.transform.SetParent(parent, false);
+
         selectButtonImage = selectButton.AddComponent<Image>();
         selectButtonImage.color = new Color(0.3f, 0.3f, 0.4f, 0.9f); // Koyu gri (seçili değil)
-        
+
         RectTransform btnRect = selectButton.GetComponent<RectTransform>();
-        btnRect.anchorMin = new Vector2(0, 0); // Sol alt
-        btnRect.anchorMax = new Vector2(0, 0);
-        btnRect.pivot = new Vector2(0, 0);
-        btnRect.anchoredPosition = new Vector2(20, 50); // Home bar için daha yukarıda
-        btnRect.sizeDelta = new Vector2(120, 120); // Daha büyük dokunma alanı
-        
-        // Buton text - Mobil için daha büyük font
+        btnRect.anchorMin = new Vector2(0.5f, 0.5f);
+        btnRect.anchorMax = new Vector2(0.5f, 0.5f);
+        btnRect.pivot     = new Vector2(0.5f, 0.5f);
+        btnRect.anchoredPosition = Vector2.zero;
+        btnRect.sizeDelta = new Vector2(120, 120);
+
+        // Buton text
         GameObject textObj = new GameObject("Text");
         textObj.transform.SetParent(selectButton.transform, false);
         selectButtonText = textObj.AddComponent<TextMeshProUGUI>();
         selectButtonText.text = "[ ]\nYAKALA";
-        selectButtonText.fontSize = 20; // 16'dan 20'ye
+        selectButtonText.fontSize = 20;
         selectButtonText.fontStyle = FontStyles.Bold;
         selectButtonText.alignment = TextAlignmentOptions.Center;
         selectButtonText.color = Color.white;
-        
+
         RectTransform textRect = textObj.GetComponent<RectTransform>();
         textRect.anchorMin = Vector2.zero;
         textRect.anchorMax = Vector2.one;
         textRect.offsetMin = Vector2.zero;
         textRect.offsetMax = Vector2.zero;
-        
+
         // Buton
         Button btn = selectButton.AddComponent<Button>();
         btn.targetGraphic = selectButtonImage;
         btn.onClick.AddListener(TogglePokeballSelection);
-        
-        Debug.Log("Pokeball seçim UI oluşturuldu!");
+
+        Debug.Log("Pokeball seçim UI HUD'a mount edildi.");
     }
     
     void TogglePokeballSelection()
