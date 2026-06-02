@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: mixed Legendary
   biomeType: 3
   rarity: 2
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.37800002, g: 0.22200002, b: 0.462, a: 0.6}
+  basePrefab: {fileID: 9041234588153649531, guid: a00a1c68df610f843aed02240655bea2, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 18
   baseHealth: 60
   baseDefense: 12

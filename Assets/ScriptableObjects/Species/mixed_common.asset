@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: mixed Common
   biomeType: 3
   rarity: 0
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.63, g: 0.37, b: 0.77, a: 1}
+  basePrefab: {fileID: 7120400216219614996, guid: 22bf763b1adc6d449a4a977b879ef390, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 5
   baseHealth: 20
   baseDefense: 3
@@ -27,7 +27,7 @@ MonoBehaviour:
   evolvesAtLevel: 20
   evolutionType: 2
   evolutionPrefab: {fileID: 0}
-  evolutionTint: {r: 0.741, g: 0.559, b: 0.839, a: 1}
+  evolutionTint: {r: 1, g: 1, b: 1, a: 1}
   evolutionScale: 1.3
   skill:
     skillName: mixed strike

@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: forest Legendary
   biomeType: 0
   rarity: 2
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.15, g: 0.45000002, b: 0.15, a: 0.6}
+  basePrefab: {fileID: 7767387044189885798, guid: 97cb84c1e298793499583c4ffedd3b72, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 18
   baseHealth: 60
   baseDefense: 12

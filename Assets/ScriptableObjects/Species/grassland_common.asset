@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: grassland Common
   biomeType: 1
   rarity: 0
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.62, g: 0.85, b: 0.29, a: 1}
+  basePrefab: {fileID: 8698390824579135309, guid: 04aabb43e39957c49931b5036a9f3e53, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 5
   baseHealth: 20
   baseDefense: 3
@@ -27,7 +27,7 @@ MonoBehaviour:
   evolvesAtLevel: 20
   evolutionType: 2
   evolutionPrefab: {fileID: 0}
-  evolutionTint: {r: 0.73399997, g: 0.89500004, b: 0.503, a: 1}
+  evolutionTint: {r: 1, g: 1, b: 1, a: 1}
   evolutionScale: 1.3
   skill:
     skillName: grassland strike

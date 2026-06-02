@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: rocky Legendary
   biomeType: 2
   rarity: 2
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.33, g: 0.234, b: 0.156, a: 0.6}
+  basePrefab: {fileID: 7403445231042603841, guid: a510a891cea50f14bbe26430529d8e49, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 18
   baseHealth: 60
   baseDefense: 12

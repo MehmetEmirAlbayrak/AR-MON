@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: normal Common
   biomeType: 4
   rarity: 0
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.78, g: 0.76, b: 0.66, a: 1}
+  basePrefab: {fileID: 4162695792829326466, guid: 3616c8d031e272f44a85d15bca9de275, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 5
   baseHealth: 20
   baseDefense: 3
@@ -27,7 +27,7 @@ MonoBehaviour:
   evolvesAtLevel: 20
   evolutionType: 2
   evolutionPrefab: {fileID: 0}
-  evolutionTint: {r: 0.84599996, g: 0.832, b: 0.762, a: 1}
+  evolutionTint: {r: 1, g: 1, b: 1, a: 1}
   evolutionScale: 1.3
   skill:
     skillName: normal strike

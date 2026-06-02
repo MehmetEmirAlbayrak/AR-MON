@@ -16,8 +16,8 @@ MonoBehaviour:
   displayName: rocky Rare
   biomeType: 2
   rarity: 1
-  basePrefab: {fileID: 7453518553332499538, guid: d30b4afe547f4224893b5b368f12f8ce, type: 3}
-  bodyTint: {r: 0.44000003, g: 0.312, b: 0.20799999, a: 0.8}
+  basePrefab: {fileID: 8608373415205421460, guid: a91aa48d4e9278c4298d1083c73f509d, type: 3}
+  bodyTint: {r: 1, g: 1, b: 1, a: 1}
   baseAttack: 10
   baseHealth: 30
   baseDefense: 6
@@ -27,7 +27,7 @@ MonoBehaviour:
   evolvesAtLevel: 20
   evolutionType: 2
   evolutionPrefab: {fileID: 0}
-  evolutionTint: {r: 0.60800004, g: 0.5184, b: 0.4456, a: 1}
+  evolutionTint: {r: 1, g: 1, b: 1, a: 1}
   evolutionScale: 1.3
   skill:
     skillName: rocky strike
