@@ -213,6 +213,12 @@ public class PokemonBag : MonoBehaviour
                 {
                     pokemon.currentHealth = pokemon.Health;
                 }
+
+                // Legacy save: default speciesId from prefabId
+                if (string.IsNullOrEmpty(pokemon.speciesId))
+                {
+                    pokemon.speciesId = pokemon.prefabId;
+                }
             }
             
             // Düzeltmeleri kaydet
