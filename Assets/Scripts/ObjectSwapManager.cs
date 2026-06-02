@@ -2,12 +2,14 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEngine.XR.ARFoundation;
 using UnityEngine.XR.ARSubsystems;
+using ARMON.AR;
 
 public class ObjectSwapManager : MonoBehaviour
 {
     [Header("AR")]
     public ARRaycastManager raycastManager;
-    public AROcclusionManager occlusionManager;
+    public ARAnchorManager anchorManager;
+    public ARPlaneManager planeManager;
 
     [System.Serializable]
     public class LabelPrefab
@@ -20,215 +22,328 @@ public class ObjectSwapManager : MonoBehaviour
 
     public List<LabelPrefab> mappings = new List<LabelPrefab>();
 
-    [Header("Derinlik Tahmini")]
-    public bool useDepthEstimation = true;
-    public float defaultRealHeight = 1.5f;
-    public float minDepth = 0.5f;
-    public float maxDepth = 15f;
-    public float multiRaycastRadius = 100f;
-    public int multiRaycastPoints = 8;
+    [Header("Position Resolver")]
+    [Tooltip("Server depth=1 (çok yakın) bu mesafeye eşlenir")]
+    public float depthNearMeters = 0.5f;
+    [Tooltip("Server depth=0 (uzak) bu mesafeye eşlenir")]
+    public float depthFarMeters = 8.0f;
+    [Tooltip("Hiç bir kaynak yoksa kameranın önüne sabit mesafe")]
+    public float fallbackMeters = 2.5f;
+    [Tooltip("Tahmini (depth-ray veya fallback) pozisyon Y'sini kameradan bu kadar düşür")]
+    public float assumedGroundOffsetY = 1.5f;
 
-    [Header("Boyut Ayarları")]
-    public float referenceDistance = 1.0f;
-    public float minObjectSize = 0.1f;
-    public float maxObjectSize = 3.0f;
+    [Header("Dedup / Confidence Gate")]
+    [Tooltip("Bir bucket'a bu kadar detection düşmeden spawn etme")]
+    public int candidateConfirmCount = 3;
+    [Tooltip("Confirm penceresi (saniye)")]
+    public float candidateWindowSeconds = 2f;
+    [Tooltip("Spatial hash hücresinin minimum kenarı (metre)")]
+    public float minCellSize = 0.3f;
 
-    [Header("Tekrar Spawn Engelleme")]
-    [Tooltip("Dünya pozisyonunda aynı label için minimum mesafe (metre) - ANA KONTROL")]
-    public float worldDuplicateDistance = 1.0f;
-    
-    [Tooltip("Aynı frame'de aynı ekran bölgesini tekrar işleme (normalized 0-1)")]
-    public float sameFrameScreenThreshold = 0.03f;
-    
-    [Tooltip("Aynı label için maksimum spawn sayısı (0 = sınırsız)")]
-    public int maxSpawnPerLabel = 0;
+    [Header("Boyut")]
+    [Tooltip("Mesafe x bbox formülünden gelen değer için alt sınır (metre). Saçma 0'ları engeller.")]
+    public float minObjectHeight = 0.05f;
+    [Tooltip("Mesafe x bbox formülünden gelen değer için üst sınır (metre). Saçma değerleri engeller.")]
+    public float maxObjectHeight = 10f;
+    [Tooltip("Mapping'de realWorldHeight > 0 ise bbox hesabı yerine onu kullan")]
+    public bool mappingOverridesBboxSize = false;
 
-    // Spawn edilen objeler
-    List<SpawnedObjectInfo> spawnedObjects = new List<SpawnedObjectInfo>();
-    
-    // Bu frame'de işlenen algılamalar (aynı frame tekrarını engellemek için)
-    List<FrameDetection> thisFrameDetections = new List<FrameDetection>();
-    int lastProcessedFrame = -1;
+    [Header("Despawn")]
+    [Tooltip("Kameradan bu mesafeden uzak spawn'lar silinir")]
+    public float despawnDistance = 6f;
+    [Tooltip("Son görülmeden bu kadar saniye geçince spawn silinir (0 = kapalı)")]
+    public float despawnStaleSeconds = 15f;
+    public float despawnCheckInterval = 1f;
 
+    [Header("Bilgi")]
     public List<DetectedObject> LastDetectedObjects { get; private set; } = new List<DetectedObject>();
+
+    enum ResolveSource { None, Plane, Depth, Fallback }
 
     class SpawnedObjectInfo
     {
         public GameObject gameObject;
+        public ARAnchor anchor;
         public string label;
         public Vector3 worldPosition;
+        public Vector3Int cell;
         public float spawnTime;
+        public float lastSeenTime;
     }
 
-    class FrameDetection
+    class CandidateBucket
     {
-        public Vector2 screenPos;
-        public string label;
+        public Vector3 sumPosition;     // ortalama hesabı için
+        public int count;
+        public float windowStart;
+        public float lastUpdate;
+    }
+
+    // (label, cell) -> bucket
+    Dictionary<(string, Vector3Int), CandidateBucket> candidates =
+        new Dictionary<(string, Vector3Int), CandidateBucket>();
+
+    // Spawn edilen objeler (cell ile indekslenir)
+    Dictionary<(string, Vector3Int), SpawnedObjectInfo> spawned =
+        new Dictionary<(string, Vector3Int), SpawnedObjectInfo>();
+
+    ARPositionResolver _resolver;
+
+    void Start()
+    {
+        _resolver = new ARPositionResolver {
+            depthNearMeters = depthNearMeters,
+            depthFarMeters  = depthFarMeters,
+            fallbackMeters  = fallbackMeters,
+            groundOffsetY   = assumedGroundOffsetY,
+        };
+        InvokeRepeating(nameof(DespawnTick), despawnCheckInterval, despawnCheckInterval);
     }
 
     public void PlaceObjects(List<DetectedObject> objects)
     {
-        if (objects == null || objects.Count == 0)
-            return;
-
-        // Yeni frame başladıysa bu frame listesini temizle
-        if (Time.frameCount != lastProcessedFrame)
-        {
-            thisFrameDetections.Clear();
-            lastProcessedFrame = Time.frameCount;
-        }
-
+        if (objects == null || objects.Count == 0) return;
         LastDetectedObjects = new List<DetectedObject>(objects);
-        CleanupDestroyedObjects();
 
         foreach (var obj in objects)
-        {
             ProcessDetectedObject(obj);
-        }
+
+        ExpireOldCandidates();
     }
 
     void ProcessDetectedObject(DetectedObject obj)
-        {
-            GameObject prefab = GetPrefabForLabel(obj.label);
-            if (prefab == null)
-            return;
-
-            if (obj.center == null || obj.center.Length < 2)
-            return;
+    {
+        GameObject prefab = GetPrefabForLabel(obj.label);
+        if (prefab == null) return;
+        if (obj.center == null || obj.center.Length < 2) return;
 
         Vector2 normalizedCenter = new Vector2(obj.center[0], obj.center[1]);
-        Vector2 screenPos = new Vector2(normalizedCenter.x * Screen.width, (1f - normalizedCenter.y) * Screen.height);
+        Vector2 screenPos = new Vector2(
+            normalizedCenter.x * Screen.width,
+            (1f - normalizedCenter.y) * Screen.height);
 
-        // 1. Bu frame'de aynı ekran bölgesi zaten işlendi mi? (aynı frame tekrarı engelle)
-        if (IsProcessedThisFrame(normalizedCenter, obj.label))
-            {
+        if (!TryResolveWorldPosition(screenPos, obj.depth,
+                out Vector3 worldPos, out Quaternion worldRot,
+                out ResolveSource src, out ARPlane hitPlane))
             return;
-        }
-
-        // 2. Derinlik tahmini yap ve dünya pozisyonunu hesapla
-        float estimatedDepth = EstimateDepthFromBbox(obj);
-        
-        Vector3 worldPosition;
-        Quaternion worldRotation;
-        float actualDepth;
-        
-        if (!TryGetWorldPosition(screenPos, estimatedDepth, out worldPosition, out worldRotation, out actualDepth))
-        {
-            return;
-            }
-
-        // 3. ANA KONTROL: Bu dünya pozisyonunda aynı tipte obje zaten var mı?
-        if (IsWorldPositionOccupied(worldPosition, obj.label))
-            {
-            // Zaten var, spawn etme - ama frame'e kaydet ki bu frame tekrar bakmasın
-            RegisterThisFrameDetection(normalizedCenter, obj.label);
-            return;
-        }
-
-        // 4. Label limiti kontrolü
-        if (maxSpawnPerLabel > 0 && GetSpawnCountForLabel(obj.label) >= maxSpawnPerLabel)
-        {
-            return;
-            }
-
-        // 5. Yeni obje spawn et
-        var go = Instantiate(prefab, worldPosition, worldRotation);
-        ScaleObjectToRealSize(go, obj, actualDepth);
-        LookAtCamera(go);
-
-        RegisterSpawn(obj.label, go, worldPosition);
-        RegisterThisFrameDetection(normalizedCenter, obj.label);
-        
-        Debug.Log($"Obje spawn edildi: {obj.label} - Dünya: {worldPosition}, Derinlik: {actualDepth:F2}m");
-    }
-
-    /// <summary>
-    /// Bu frame'de aynı ekran bölgesi işlendi mi? (aynı frame içi tekrar engelle)
-    /// </summary>
-    bool IsProcessedThisFrame(Vector2 normalizedPos, string label)
-    {
-        foreach (var detection in thisFrameDetections)
-        {
-            if (detection.label.ToLower() == label.ToLower())
-            {
-                float dist = Vector2.Distance(normalizedPos, detection.screenPos);
-                if (dist < sameFrameScreenThreshold)
-                {
-                    return true;
-                }
-            }
-        }
-        return false;
-    }
-
-    void RegisterThisFrameDetection(Vector2 normalizedPos, string label)
-    {
-        thisFrameDetections.Add(new FrameDetection
-        {
-            screenPos = normalizedPos,
-            label = label
-        });
-    }
-    
-    /// <summary>
-    /// DÜNYA POZİSYONUNDA aynı tipte obje var mı? (ANA KONTROL - kamera açısından bağımsız)
-    /// </summary>
-    bool IsWorldPositionOccupied(Vector3 position, string label)
-    {
-        string lowerLabel = label.ToLower();
-        
-        foreach (var spawnInfo in spawnedObjects)
-    {
-            if (spawnInfo.gameObject == null) continue;
-            
-            // Aynı label kontrolü
-            if (spawnInfo.label.ToLower() != lowerLabel) continue;
-            
-            // Dünya mesafesi kontrolü
-            float worldDist = Vector3.Distance(position, spawnInfo.worldPosition);
-            if (worldDist < worldDuplicateDistance)
-        {
-                Debug.Log($"'{label}' zaten mevcut - mesafe: {worldDist:F2}m < {worldDuplicateDistance}m");
-                return true;
-            }
-        }
-        return false;
-    }
-
-    /// <summary>
-    /// Bounding box boyutundan derinlik tahmini
-    /// </summary>
-    float EstimateDepthFromBbox(DetectedObject obj)
-    {
-        if (!useDepthEstimation || obj.bbox == null || obj.bbox.Length < 4)
-            return referenceDistance;
 
         float realHeight = GetRealHeightForLabel(obj.label);
-        float bboxHeight = obj.Height;
-        
-        if (bboxHeight <= 0.01f)
-            return maxDepth;
+        float cellSize = Mathf.Max(minCellSize, realHeight * 0.5f);
+        Vector3Int cell = WorldToCell(worldPos, cellSize);
+        string label = obj.label.ToLower();
+        var key = (label, cell);
+
+        // Bu bucket'ta zaten bir spawn varsa: sadece "hâlâ görüldü"
+        if (spawned.TryGetValue(key, out var existing))
+        {
+            existing.lastSeenTime = Time.time;
+            return;
+        }
+
+        // Candidate buffer
+        if (!candidates.TryGetValue(key, out var bucket))
+        {
+            bucket = new CandidateBucket
+            {
+                sumPosition = worldPos,
+                count = 1,
+                windowStart = Time.time,
+                lastUpdate = Time.time,
+            };
+            candidates[key] = bucket;
+            return;
+        }
+
+        bucket.sumPosition += worldPos;
+        bucket.count++;
+        bucket.lastUpdate = Time.time;
+
+        if (Time.time - bucket.windowStart > candidateWindowSeconds)
+        {
+            // Pencere kaydı — yeni pencere başlat
+            bucket.windowStart = Time.time;
+            bucket.sumPosition = worldPos;
+            bucket.count = 1;
+            return;
+        }
+
+        if (bucket.count < candidateConfirmCount) return;
+
+        // Promote: spawn et
+        Vector3 finalPos = bucket.sumPosition / bucket.count;
+        SpawnObject(prefab, label, cell, finalPos, worldRot, realHeight, obj, src, hitPlane);
+        candidates.Remove(key);
+    }
+
+    // ============ POSITION RESOLVER ============
+
+    bool TryResolveWorldPosition(Vector2 screenPos, float depth01,
+        out Vector3 pos, out Quaternion rot, out ResolveSource source, out ARPlane plane)
+    {
+        if (!_resolver.TryResolve(screenPos, depth01, raycastManager, planeManager, out var r))
+        {
+            pos = default; rot = Quaternion.identity; source = ResolveSource.None; plane = null;
+            return false;
+        }
+        pos = r.position;
+        rot = r.rotation;
+        plane = r.plane;
+        source = r.source switch {
+            ARMON.AR.ResolveSource.Plane    => ResolveSource.Plane,
+            ARMON.AR.ResolveSource.Depth    => ResolveSource.Depth,
+            ARMON.AR.ResolveSource.Fallback => ResolveSource.Fallback,
+            _                                => ResolveSource.None,
+        };
+        return true;
+    }
+
+    // ============ SPAWN ============
+
+    void SpawnObject(GameObject prefab, string label, Vector3Int cell,
+        Vector3 pos, Quaternion rot, float mappingHeight,
+        DetectedObject detection,
+        ResolveSource source, ARPlane plane)
+    {
+        var rp = new ARMON.AR.ResolvedPose {
+            position = pos,
+            rotation = rot,
+            plane    = plane,
+            source   = source == ResolveSource.Plane
+                ? ARMON.AR.ResolveSource.Plane
+                : ARMON.AR.ResolveSource.Fallback,
+        };
+        ARAnchor anchor = ARAnchorUtil.CreateAnchor(rp, anchorManager, $"Anchor_{label}");
+        GameObject go = Instantiate(prefab, anchor.transform);
+        go.transform.localPosition = Vector3.zero;
+        go.transform.localRotation = Quaternion.identity;
+
+        float targetHeight = ResolveTargetHeight(detection, pos, mappingHeight);
+        ScaleToRealHeight(go, targetHeight);
+
+        spawned[(label, cell)] = new SpawnedObjectInfo
+        {
+            gameObject = go,
+            anchor = anchor,
+            label = label,
+            worldPosition = pos,
+            cell = cell,
+            spawnTime = Time.time,
+            lastSeenTime = Time.time,
+        };
+
+        Debug.Log($"Spawn: {label} @ {pos} (src={source}, anchor={(anchor != null)})");
+    }
+
+    /// <summary>
+    /// Hedef yüksekliği belirler: mapping override istenmediyse bbox x mesafe formülünden hesaplar,
+    /// aksi halde label fallback'i kullanır. Sonucu min/max ile sınırlar.
+    /// </summary>
+    float ResolveTargetHeight(DetectedObject obj, Vector3 worldPos, float mappingHeight)
+    {
+        if (mappingOverridesBboxSize && mappingHeight > 0f)
+            return Mathf.Clamp(mappingHeight, minObjectHeight, maxObjectHeight);
 
         Camera cam = Camera.main;
-        float verticalFOV = cam.fieldOfView * Mathf.Deg2Rad;
-        
-        float estimatedDepth = realHeight / (2f * Mathf.Tan(verticalFOV / 2f) * bboxHeight);
-        return Mathf.Clamp(estimatedDepth, minDepth, maxDepth);
+        if (cam != null && obj != null && obj.bbox != null && obj.bbox.Length == 4)
+        {
+            float bboxH = Mathf.Abs(obj.bbox[3] - obj.bbox[1]); // normalize 0..1
+            if (bboxH > 0.001f)
+            {
+                float dist = Vector3.Distance(cam.transform.position, worldPos);
+                float vFov = cam.fieldOfView * Mathf.Deg2Rad;
+                float estimated = 2f * dist * Mathf.Tan(vFov * 0.5f) * bboxH;
+                return Mathf.Clamp(estimated, minObjectHeight, maxObjectHeight);
+            }
+        }
+
+        // bbox yoksa mapping'e düş
+        return Mathf.Clamp(mappingHeight, minObjectHeight, maxObjectHeight);
+    }
+
+    void ScaleToRealHeight(GameObject go, float targetHeight)
+    {
+        var renderers = go.GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0) return;
+
+        Bounds combined = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++)
+            combined.Encapsulate(renderers[i].bounds);
+
+        float currentHeight = combined.size.y;
+        if (currentHeight <= 0.001f) return;
+
+        float scale = targetHeight / currentHeight;
+        go.transform.localScale = Vector3.one * scale;
+    }
+
+    // ============ DESPAWN ============
+
+    void DespawnTick()
+    {
+        Camera cam = Camera.main;
+        if (cam == null) return;
+
+        var toRemove = new List<(string, Vector3Int)>();
+        foreach (var kv in spawned)
+        {
+            var info = kv.Value;
+            if (info.gameObject == null) { toRemove.Add(kv.Key); continue; }
+
+            float dist = Vector3.Distance(cam.transform.position, info.worldPosition);
+            bool tooFar = dist > despawnDistance;
+            bool stale = despawnStaleSeconds > 0f
+                         && (Time.time - info.lastSeenTime) > despawnStaleSeconds;
+
+            if (tooFar || stale)
+            {
+                Destroy(info.gameObject);
+                if (info.anchor != null) Destroy(info.anchor.gameObject);
+                toRemove.Add(kv.Key);
+            }
+        }
+        foreach (var key in toRemove) spawned.Remove(key);
+    }
+
+    void ExpireOldCandidates()
+    {
+        if (candidates.Count == 0) return;
+        var stale = new List<(string, Vector3Int)>();
+        foreach (var kv in candidates)
+        {
+            if (Time.time - kv.Value.lastUpdate > candidateWindowSeconds * 2f)
+                stale.Add(kv.Key);
+        }
+        foreach (var k in stale) candidates.Remove(k);
+    }
+
+    // ============ HELPERS ============
+
+    Vector3Int WorldToCell(Vector3 pos, float cellSize)
+    {
+        return new Vector3Int(
+            Mathf.FloorToInt(pos.x / cellSize),
+            Mathf.FloorToInt(pos.y / cellSize),
+            Mathf.FloorToInt(pos.z / cellSize));
+    }
+
+    GameObject GetPrefabForLabel(string label)
+    {
+        if (string.IsNullOrEmpty(label)) return null;
+        label = label.ToLower();
+        foreach (var m in mappings)
+            if (label.Contains(m.label.ToLower())) return m.prefab;
+        return null;
     }
 
     float GetRealHeightForLabel(string label)
     {
-        if (string.IsNullOrEmpty(label)) return defaultRealHeight;
-        
+        if (string.IsNullOrEmpty(label)) return 1.0f;
         label = label.ToLower();
-        
-        foreach (var map in mappings)
-        {
-            if (label.Contains(map.label.ToLower()))
-                return map.realWorldHeight;
-        }
-        
-        // Yaygın objeler
+
+        foreach (var m in mappings)
+            if (label.Contains(m.label.ToLower())) return m.realWorldHeight;
+
+        // Yaygın objeler — sadece bbox bilgisi yoksa veya mappingOverridesBboxSize=true ise kullanılır
         if (label.Contains("tree") || label.Contains("agac")) return 4f;
         if (label.Contains("person") || label.Contains("insan")) return 1.7f;
         if (label.Contains("car") || label.Contains("araba")) return 1.5f;
@@ -238,248 +353,66 @@ public class ObjectSwapManager : MonoBehaviour
         if (label.Contains("table") || label.Contains("masa")) return 0.75f;
         if (label.Contains("bottle") || label.Contains("sise")) return 0.25f;
         if (label.Contains("phone") || label.Contains("telefon")) return 0.15f;
-        if (label.Contains("laptop") || label.Contains("bilgisayar")) return 0.3f;
+        if (label.Contains("laptop")) return 0.3f;
         if (label.Contains("rock") || label.Contains("kaya")) return 0.5f;
         if (label.Contains("flower") || label.Contains("cicek")) return 0.3f;
+        if (label.Contains("leaf") || label.Contains("yaprak")) return 0.2f;
         if (label.Contains("bush") || label.Contains("cali")) return 1f;
         if (label.Contains("bench") || label.Contains("bank")) return 0.8f;
         if (label.Contains("lamp") || label.Contains("lamba")) return 2f;
         if (label.Contains("sign") || label.Contains("tabela")) return 1.5f;
         if (label.Contains("bird") || label.Contains("kus")) return 0.2f;
-        
-        return defaultRealHeight;
+        return 1.0f;
     }
 
-    bool TryGetWorldPosition(Vector2 screenPos, float estimatedDepth, out Vector3 worldPos, out Quaternion worldRot, out float actualDepth)
-    {
-        Camera cam = Camera.main;
-        var hits = new List<ARRaycastHit>();
-        
-        // 1. AR Plane raycast
-        if (raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon))
-        {
-            worldPos = hits[0].pose.position;
-            worldRot = hits[0].pose.rotation;
-            actualDepth = Vector3.Distance(cam.transform.position, worldPos);
-            
-            // Tahminle çok farklıysa tahmini kullan
-            if (Mathf.Abs(actualDepth - estimatedDepth) > estimatedDepth * 0.5f)
-            {
-                worldPos = GetPositionAtDepth(screenPos, estimatedDepth, worldPos.y);
-                actualDepth = estimatedDepth;
-            }
-            
-            return true;
-        }
-        
-        // 2. Multi raycast
-        if (TryMultiRaycast(screenPos, out Vector3 nearbyPos, out Quaternion nearbyRot))
-        {
-            worldPos = GetPositionAtDepth(screenPos, estimatedDepth, nearbyPos.y);
-            worldRot = nearbyRot;
-            actualDepth = estimatedDepth;
-            return true;
-        }
-        
-        // 3. Depth API (varsa)
-        if (occlusionManager != null && TryGetDepthFromAPI(screenPos, out float apiDepth))
-        {
-            worldPos = GetPositionAtDepth(screenPos, apiDepth, 0);
-            worldRot = Quaternion.identity;
-            actualDepth = apiDepth;
-            return true;
-        }
-        
-        // 4. Sadece tahmin
-        if (useDepthEstimation && estimatedDepth > 0)
-        {
-            float assumedGroundY = cam.transform.position.y - 1.5f;
-            worldPos = GetPositionAtDepth(screenPos, estimatedDepth, assumedGroundY);
-            worldRot = Quaternion.identity;
-            actualDepth = estimatedDepth;
-            return true;
-        }
-        
-        worldPos = Vector3.zero;
-        worldRot = Quaternion.identity;
-        actualDepth = 0;
-        return false;
-    }
-
-    Vector3 GetPositionAtDepth(Vector2 screenPos, float depth, float overrideY)
-    {
-        Camera cam = Camera.main;
-        Ray ray = cam.ScreenPointToRay(screenPos);
-        Vector3 position = ray.origin + ray.direction * depth;
-        
-        if (overrideY != 0)
-            position.y = overrideY;
-        
-        return position;
-    }
-
-    bool TryMultiRaycast(Vector2 centerScreen, out Vector3 foundPos, out Quaternion foundRot)
-    {
-        var hits = new List<ARRaycastHit>();
-        List<ARRaycastHit> allHits = new List<ARRaycastHit>();
-        
-        for (int i = 0; i < multiRaycastPoints; i++)
-        {
-            float angle = (360f / multiRaycastPoints) * i * Mathf.Deg2Rad;
-            Vector2 testPoint = centerScreen + new Vector2(
-                Mathf.Cos(angle) * multiRaycastRadius,
-                Mathf.Sin(angle) * multiRaycastRadius
-            );
-            
-            if (testPoint.x < 0 || testPoint.x > Screen.width || 
-                testPoint.y < 0 || testPoint.y > Screen.height)
-                continue;
-            
-            if (raycastManager.Raycast(testPoint, hits, TrackableType.PlaneWithinPolygon))
-                allHits.Add(hits[0]);
-        }
-        
-        if (allHits.Count > 0)
-        {
-            ARRaycastHit closest = allHits[0];
-            float closestDist = float.MaxValue;
-            
-            foreach (var hit in allHits)
-            {
-                float dist = Vector3.Distance(Camera.main.transform.position, hit.pose.position);
-                if (dist < closestDist)
-                {
-                    closestDist = dist;
-                    closest = hit;
-                }
-            }
-            
-            foundPos = closest.pose.position;
-            foundRot = closest.pose.rotation;
-            return true;
-        }
-        
-        foundPos = Vector3.zero;
-        foundRot = Quaternion.identity;
-        return false;
-    }
-
-    bool TryGetDepthFromAPI(Vector2 screenPos, out float depth)
-    {
-        depth = 0;
-        return false;
-    }
-
-    void LookAtCamera(GameObject go)
-    {
-        Camera cam = Camera.main;
-        Vector3 lookDir = cam.transform.position - go.transform.position;
-        lookDir.y = 0;
-        
-        if (lookDir != Vector3.zero)
-            go.transform.rotation = Quaternion.LookRotation(-lookDir);
-    }
-
-    void CleanupDestroyedObjects()
-    {
-        spawnedObjects.RemoveAll(info => info.gameObject == null);
-    }
-
-    void ScaleObjectToRealSize(GameObject go, DetectedObject detectedObj, float distance)
-    {
-        if (detectedObj.bbox == null || detectedObj.bbox.Length < 4)
-            return;
-
-        Camera cam = Camera.main;
-        float verticalFOV = cam.fieldOfView * Mathf.Deg2Rad;
-        float horizontalFOV = 2f * Mathf.Atan(Mathf.Tan(verticalFOV / 2f) * cam.aspect);
-
-        float realWidth = 2f * distance * Mathf.Tan(horizontalFOV / 2f) * detectedObj.Width;
-        float realHeight = 2f * distance * Mathf.Tan(verticalFOV / 2f) * detectedObj.Height;
-
-        realWidth = Mathf.Clamp(realWidth, minObjectSize, maxObjectSize);
-        realHeight = Mathf.Clamp(realHeight, minObjectSize, maxObjectSize);
-
-        Renderer renderer = go.GetComponentInChildren<Renderer>();
-        if (renderer == null) return;
-
-        Vector3 originalSize = renderer.bounds.size;
-        float scaleFactorX = originalSize.x > 0 ? realWidth / originalSize.x : 1f;
-        float scaleFactorY = originalSize.y > 0 ? realHeight / originalSize.y : 1f;
-        float uniformScale = (scaleFactorX + scaleFactorY) / 2f;
-        
-        go.transform.localScale = Vector3.one * uniformScale;
-    }
-
-    GameObject GetPrefabForLabel(string label)
-    {
-        if (string.IsNullOrEmpty(label)) return null;
-        label = label.ToLower();
-
-        foreach (var map in mappings)
-        {
-            if (label.Contains(map.label.ToLower()))
-                return map.prefab;
-        }
-        return null;
-    }
-
-    void RegisterSpawn(string label, GameObject go, Vector3 worldPos)
-    {
-        spawnedObjects.Add(new SpawnedObjectInfo
-        {
-            gameObject = go,
-            label = label,
-            worldPosition = worldPos,
-            spawnTime = Time.time
-        });
-    }
+    // ============ PUBLIC API (compat) ============
 
     public void ClearAllSpawns()
     {
-        foreach (var info in spawnedObjects)
+        foreach (var info in spawned.Values)
         {
-            if (info.gameObject != null)
-                Destroy(info.gameObject);
+            if (info.gameObject != null) Destroy(info.gameObject);
+            if (info.anchor != null) Destroy(info.anchor.gameObject);
         }
-        spawnedObjects.Clear();
-        thisFrameDetections.Clear();
+        spawned.Clear();
+        candidates.Clear();
         LastDetectedObjects.Clear();
-        Debug.Log("Tüm objeler temizlendi.");
+        Debug.Log("Tüm spawn'lar temizlendi.");
     }
-    
+
     public int GetTotalSpawnCount()
     {
-        CleanupDestroyedObjects();
-        return spawnedObjects.Count;
+        // Destroy edilenleri temizle
+        var dead = new List<(string, Vector3Int)>();
+        foreach (var kv in spawned)
+            if (kv.Value.gameObject == null) dead.Add(kv.Key);
+        foreach (var k in dead) spawned.Remove(k);
+        return spawned.Count;
     }
-    
+
     public int GetSpawnCountForLabel(string label)
     {
-        CleanupDestroyedObjects();
-        string lowerLabel = label.ToLower();
+        if (string.IsNullOrEmpty(label)) return 0;
+        string lower = label.ToLower();
         int count = 0;
-        
-        foreach (var info in spawnedObjects)
-        {
-            if (info.label.ToLower() == lowerLabel)
-                count++;
-        }
+        foreach (var info in spawned.Values)
+            if (info.gameObject != null && info.label == lower) count++;
         return count;
     }
 
     public void ClearSpawnsForLabel(string label)
     {
-        string lowerLabel = label.ToLower();
-        
-        for (int i = spawnedObjects.Count - 1; i >= 0; i--)
+        if (string.IsNullOrEmpty(label)) return;
+        string lower = label.ToLower();
+        var toRemove = new List<(string, Vector3Int)>();
+        foreach (var kv in spawned)
+            if (kv.Value.label == lower) toRemove.Add(kv.Key);
+        foreach (var k in toRemove)
         {
-            if (spawnedObjects[i].label.ToLower() == lowerLabel)
-        {
-                if (spawnedObjects[i].gameObject != null)
-                    Destroy(spawnedObjects[i].gameObject);
-                spawnedObjects.RemoveAt(i);
-        }
+            var info = spawned[k];
+            if (info.gameObject != null) Destroy(info.gameObject);
+            if (info.anchor != null) Destroy(info.anchor.gameObject);
+            spawned.Remove(k);
         }
     }
 }
