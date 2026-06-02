@@ -4,12 +4,24 @@
 using UnityEngine;
 using UnityEngine.UI;
 using TMPro;
+using ARMON.Data;
 
 public class PokeballController : MonoBehaviour
 {
     public static PokeballController Instance { get; private set; }
-    
+
     public GameObject pokeballPrefab; // Poketopu prefabı
+
+    [Header("Catch")]
+    public BallQuality quality = BallQuality.Normal;
+
+    public float QualityMultiplier => quality switch
+    {
+        BallQuality.Normal => 1.0f,
+        BallQuality.Great  => 1.5f,
+        BallQuality.Ultra  => 2.0f,
+        _                  => 1.0f,
+    };
     
     [Header("Kamera Takip Ayarları")]
     public Vector3 pokeballOffset = new Vector3(0f, -0.5f, 1.2f); // Kameraya göre offset (sağ, aşağı, ileri) - daha uzakta
