@@ -672,7 +672,6 @@ MonoBehaviour:
   objectColor: {r: 0.4, g: 0.6, b: 1, a: 1}
   highConfidenceColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   lowConfidenceColor: {r: 1, g: 0.8, b: 0.2, a: 1}
-  createDynamicUI: 1
 --- !u!4 &355663342
 Transform:
   m_ObjectHideFlags: 0
@@ -807,6 +806,52 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   config: {fileID: 11400000, guid: 293c9c76dd1dd4482a71509b9cc5b285, type: 2}
+--- !u!1 &597998698
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 597998700}
+  - component: {fileID: 597998699}
+  m_Layer: 0
+  m_Name: ARHudRoot
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &597998699
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 597998698}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 152ee2c2ddb3fe542a91a1547115ab61, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ARMON.UI.AR.ARHudCanvas
+  distanceFromCamera: 0.5
+  hudSize: {x: 0.6, y: 1}
+--- !u!4 &597998700
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 597998698}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &605147286
 GameObject:
   m_ObjectHideFlags: 0
@@ -896,8 +941,8 @@ MonoBehaviour:
   anchorManager: {fileID: 692674516}
   planeManager: {fileID: 692674515}
   objectSwapManager: {fileID: 624609466}
-  minSpawnDistance: 2
-  maxSpawnDistance: 8
+  minSpawnDistance: 1.5
+  maxSpawnDistance: 15
   minDistanceBetweenPokemons: 0.3
   spreadRadius: 1
   sizeVariation: {x: 0.7, y: 1.3}
@@ -956,17 +1001,17 @@ MonoBehaviour:
     prefab: {fileID: 38335279662140195, guid: 34d3f526198dae440bb2ce6005d86055, type: 3}
     realWorldHeight: 0.2
   depthNearMeters: 0.5
-  depthFarMeters: 8
-  fallbackMeters: 2.5
+  depthFarMeters: 18
+  fallbackMeters: 4
   assumedGroundOffsetY: 1.5
   candidateConfirmCount: 2
   candidateWindowSeconds: 4
-  minCellSize: 0.3
+  minCellSize: 0.6
   minObjectHeight: 0.05
   maxObjectHeight: 10
   mappingOverridesBboxSize: 0
-  despawnDistance: 4
-  despawnStaleSeconds: 15
+  despawnDistance: 18
+  despawnStaleSeconds: 35
   despawnCheckInterval: 1
 --- !u!1 &692674511
 GameObject:
@@ -1211,7 +1256,6 @@ MonoBehaviour:
   objectColor: {r: 0.4, g: 0.6, b: 1, a: 1}
   highConfidenceColor: {r: 0.2, g: 1, b: 0.2, a: 1}
   lowConfidenceColor: {r: 1, g: 0.8, b: 0.2, a: 1}
-  createDynamicUI: 1
 --- !u!224 &798040977
 RectTransform:
   m_ObjectHideFlags: 0
@@ -2288,6 +2332,50 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1651842005}
   m_CullTransparentMesh: 1
+--- !u!1 &1653817608
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1653817610}
+  - component: {fileID: 1653817609}
+  m_Layer: 0
+  m_Name: ARBagButton
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1653817609
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1653817608}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: d97c76197f769264aaf2f2c31d178864, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::ARMON.UI.AR.ARBagButton
+--- !u!4 &1653817610
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1653817608}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1785126464
 GameObject:
   m_ObjectHideFlags: 0
@@ -2434,7 +2522,6 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 1867156327}
-  - component: {fileID: 1867156326}
   m_Layer: 0
   m_Name: PrefabRegistry
   m_TagString: Untagged
@@ -2442,27 +2529,6 @@ GameObject:
   m_NavMeshLayer: 0
   m_StaticEditorFlags: 0
   m_IsActive: 1
---- !u!114 &1867156326
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 1867156325}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: 7e961dfa9a1fada4ba56381e86decc6f, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::PokemonPrefabRegistry
-  pokemonPrefabs:
-  - pokemonId: Little_Ghost_ZOMbi (6)
-    prefab: {fileID: 6466474970774430903, guid: 766762930a40b174c8956cdf3007423e, type: 3}
-  - pokemonId: Little_Ghost_ZOMbi (7)
-    prefab: {fileID: 3985757784934188552, guid: 04b2d16e1c1a3ff44b840552be5592c0, type: 3}
-  - pokemonId: Little_Ghost_ZOMbi (9)
-    prefab: {fileID: 4528888763381533394, guid: 0e984e923d84c6644a3633bbbc1127b9, type: 3}
-  - pokemonId: Little_Ghost_ZOMbi (2)
-    prefab: {fileID: 9203938796069245880, guid: b100033bd257c8e479a5c0a5b148fa2c, type: 3}
 --- !u!4 &1867156327
 Transform:
   m_ObjectHideFlags: 0
@@ -2579,3 +2645,5 @@ SceneRoots:
   - {fileID: 1867156327}
   - {fileID: 605147288}
   - {fileID: 355663342}
+  - {fileID: 597998700}
+  - {fileID: 1653817610}
