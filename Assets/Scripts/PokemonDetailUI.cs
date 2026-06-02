@@ -56,7 +56,7 @@ public class PokemonDetailUI : MonoBehaviour
 
     void Start()
     {
-        CreateUI();
+        // Replaced by ARDetailSubPanel; this class kept only for any lingering references.
     }
 
     void CreateUI()
@@ -313,22 +313,10 @@ public class PokemonDetailUI : MonoBehaviour
     /// <summary>
     /// Detay sayfasını aç
     /// </summary>
-    public void Open(int pokemonIndex)
+    public void Open(int index)
     {
-        if (PokemonBag.Instance == null) return;
-        
-        PokemonData pokemon = PokemonBag.Instance.GetPokemonAt(pokemonIndex);
-        if (pokemon == null) return;
-        
-        currentPokemon = pokemon;
-        currentIndex = pokemonIndex;
-        
-        UpdateUI();
-        
-        detailPanel.SetActive(true);
-        isOpen = true;
-        
-        Debug.Log($"Pokemon detay sayfasi acildi: {pokemon.pokemonName}");
+        if (ARMON.UI.AR.ARInventoryPanel.Current != null)
+            ARMON.UI.AR.ARDetailSubPanel.OpenBeside(ARMON.UI.AR.ARInventoryPanel.Current, index);
     }
     
     /// <summary>
