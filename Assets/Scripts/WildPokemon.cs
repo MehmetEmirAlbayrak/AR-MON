@@ -1,8 +1,11 @@
 using UnityEngine;
+using ARMON.Data;
 
 public class WildPokemon : MonoBehaviour
 {
     [Header("Pokemon Bilgileri")]
+    // Stub: populated by spawner; full usage lands in Task 3.2.
+    public PokemonSpecies species;
     public string pokemonName;
     public int level = 0; // 0 = rastgele level atanacak
     public int minLevel = 1;
