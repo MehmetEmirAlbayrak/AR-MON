@@ -216,9 +216,24 @@ public class PlayerPokemonController : MonoBehaviour
         int damage = pokemonData.Attack;
         
         Debug.Log($"{pokemonData.pokemonName} saldırdı! {damage} hasar!");
-        
-        // Hedefe hasar ver
-        target.TakeDamage(damage);
+
+        // Route through colored beam if species + registry available
+        var sp = battleManager != null && battleManager.registry != null
+            ? battleManager.registry.GetById(pokemonData.speciesId)
+            : null;
+
+        if (sp != null && sp.skill != null && battleManager.beamPrefab != null)
+        {
+            battleManager.FireBeam(transform.position, target, sp.skill, sp.baseAttack);
+            // Apply damage immediately to keep IsFainted check below valid (beam visual is async)
+            int beamDamage = sp.skill.DamageAgainst(sp.baseAttack);
+            target.TakeDamage(beamDamage);
+            damage = beamDamage;
+        }
+        else
+        {
+            target.TakeDamage(damage);
+        }
         
         // Öldü mü kontrol et
         if (target.IsFainted)

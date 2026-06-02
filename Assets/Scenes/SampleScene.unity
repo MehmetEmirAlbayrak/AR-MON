@@ -634,6 +634,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 346bad029ccccb34883e249778c14bf6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokemonDetailUI
+  registry: {fileID: 0}
 --- !u!114 &355663340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -1334,6 +1335,7 @@ MonoBehaviour:
   raycastManager: {fileID: 692674514}
   planeManager: {fileID: 692674515}
   registry: {fileID: 0}
+  beamPrefab: {fileID: 4599044750637465947, guid: 1e6336fa63717fd45ae74fce4aaeb1f0, type: 3}
 --- !u!4 &803085205
 Transform:
   m_ObjectHideFlags: 0
@@ -1694,6 +1696,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokeballController
   pokeballPrefab: {fileID: 238189085380014438, guid: b3793c212ff95a145ac1a100e031f304, type: 3}
+  quality: 0
   pokeballOffset: {x: 0, y: -0.5, z: 1.2}
   pokeballScale: 0.15
   followSpeed: 10

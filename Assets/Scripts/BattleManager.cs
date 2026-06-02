@@ -26,6 +26,17 @@ public class BattleManager : MonoBehaviour
 
     [Header("Data")]
     public PokemonSpeciesRegistry registry;
+
+    [Header("Combat")]
+    public GameObject beamPrefab; // assign BeamProjectile.prefab in scene/inspector
+
+    public void FireBeam(Vector3 fromWorld, WildPokemon target, ARMON.Data.PokemonSkill skill, int attackerAttack)
+    {
+        if (beamPrefab == null || target == null || skill == null) return;
+        var go = Instantiate(beamPrefab, fromWorld, Quaternion.identity);
+        var bp = go.GetComponent<BeamProjectile>();
+        if (bp != null) bp.Init(fromWorld, target, skill, attackerAttack);
+    }
     
     // Mevcut savaşan Pokemon
     private GameObject currentPlayerPokemon;
