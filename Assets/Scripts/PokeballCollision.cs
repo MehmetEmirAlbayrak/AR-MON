@@ -24,12 +24,19 @@ public class PokeballCollision : MonoBehaviour
     private void OnCollisionEnter(Collision collision)
     {
         if (hasCapturedPokemon) return;
-        
-        if (collision.gameObject.CompareTag("Pokemon"))
+
+        if (!collision.gameObject.CompareTag("Pokemon")) return;
+
+        // Own-Pokemon guard — never catch the player's own Pokémon
+        if (collision.gameObject.GetComponentInParent<PlayerPokemonController>() != null
+            || collision.gameObject.GetComponent<PlayerPokemonController>() != null)
         {
-            Debug.Log("Pokemon yakalandı!");
-            CaptureTemporarily(collision.gameObject);
+            Debug.Log("Own Pokemon hit, ignoring pokeball");
+            return;
         }
+
+        Debug.Log("Pokemon yakalandı!");
+        CaptureTemporarily(collision.gameObject);
     }
 
     private void CaptureTemporarily(GameObject pokemon)
@@ -143,14 +150,15 @@ public class PokeballCollision : MonoBehaviour
         
         if (wildPokemonData != null)
         {
-            isCaught = wildPokemonData.TryCatch();
+            float ballMult = controller != null ? controller.QualityMultiplier : 1f;
+            isCaught = wildPokemonData.TryCatch(ballMult);
             pokemonLevel = wildPokemonData.level;
         }
         else
         {
             isCaught = Random.value <= 0.5f;
         }
-        
+
         if (isCaught)
         {
             Debug.Log($"Pokemon yakalandı! (Level {pokemonLevel})");
@@ -158,8 +166,16 @@ public class PokeballCollision : MonoBehaviour
         }
         else
         {
-            Debug.Log($"Pokemon kaçtı! (Level {pokemonLevel})");
-            StartCoroutine(CatchFailAnimation());
+            if (wildPokemonData != null && wildPokemonData.ShouldEscape())
+            {
+                Debug.Log($"Legendary {wildPokemonData.pokemonName} escaped after {wildPokemonData.failedCatchAttempts} fails!");
+                StartCoroutine(LegendaryEscapeAnimation(wildPokemonData));
+            }
+            else
+            {
+                Debug.Log($"Pokemon kaçtı! (Level {pokemonLevel})");
+                StartCoroutine(CatchFailAnimation());
+            }
         }
     }
     
@@ -349,10 +365,10 @@ public class PokeballCollision : MonoBehaviour
         }
         
         transform.rotation = originalRot;
-        
+
         // Patlama efekti - büyüyüp küçül
         Vector3 originalScale = transform.localScale;
-        
+
         // Büyü
         elapsed = 0;
         float expandDuration = 0.1f;
@@ -363,7 +379,7 @@ public class PokeballCollision : MonoBehaviour
             transform.localScale = Vector3.Lerp(originalScale, originalScale * 1.3f, t);
             yield return null;
         }
-        
+
         // Hızla küçül ve kaybol
         elapsed = 0;
         float shrinkDuration = 0.15f;
@@ -375,5 +391,38 @@ public class PokeballCollision : MonoBehaviour
             transform.localScale = Vector3.Lerp(expandedScale, Vector3.zero, t);
             yield return null;
         }
+    }
+
+    private IEnumerator LegendaryEscapeAnimation(WildPokemon target)
+    {
+        // Re-enable the target briefly so the shrink is visible
+        if (target != null && target.gameObject != null)
+        {
+            target.gameObject.SetActive(true);
+            Vector3 start = target.transform.localScale;
+            float t = 0f;
+            while (t < 0.5f)
+            {
+                if (target == null) break;
+                target.transform.localScale = Vector3.Lerp(start, Vector3.zero, t / 0.5f);
+                t += Time.deltaTime;
+                yield return null;
+            }
+            if (target != null)
+            {
+                var anchor = target.GetComponentInParent<UnityEngine.XR.ARFoundation.ARAnchor>();
+                if (anchor != null) Destroy(anchor.gameObject);
+                else Destroy(target.gameObject);
+            }
+        }
+
+        // Pokeball: shrink and disappear too
+        yield return StartCoroutine(ShrinkAndDisappear());
+
+        hasCapturedPokemon = false;
+        capturedPokemon = null;
+        wildPokemonData = null;
+
+        if (controller != null) controller.OnPokemonEscaped();
     }
 }
