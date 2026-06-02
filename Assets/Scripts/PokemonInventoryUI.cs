@@ -52,11 +52,8 @@ public class PokemonInventoryUI : MonoBehaviour
 
     void Start()
     {
-        // Eğer UI henüz oluşturulmadıysa oluştur
-        if (mainCanvas == null)
-        {
-            CreateUI();
-        }
+        // Old screen-overlay canvas is replaced by ARInventoryPanel + ARBagButton.
+        // This component now exists only for backwards-compat singleton references.
         CloseInventory();
     }
     
@@ -110,44 +107,15 @@ public class PokemonInventoryUI : MonoBehaviour
 
     public void OpenInventory()
     {
-        // UI'ın var olduğundan emin ol
-        EnsureUIExists();
-        
         isOpen = true;
-        selectedPotionType = null; // Pot seçimini sıfırla
-        
-        // Rename paneli varsa kapat
-        if (renamePanel != null)
-        {
-            renamePanel.SetActive(false);
-        }
-        
-        if (inventoryPanel != null)
-        {
-            inventoryPanel.SetActive(true);
-        }
-        if (openButton != null)
-        {
-            openButton.gameObject.SetActive(false);
-        }
-        RefreshSlots();
-        UpdatePotionCounts();
-        UpdatePotionButtonColors();
-        
-        Debug.Log($"Envanter açıldı! selectedPotionType: {selectedPotionType}");
+        ARMON.UI.AR.ARInventoryPanel.Open(Camera.main);
     }
 
     public void CloseInventory()
     {
         isOpen = false;
-        if (inventoryPanel != null)
-        {
-            inventoryPanel.SetActive(false);
-        }
-        if (openButton != null)
-        {
-            openButton.gameObject.SetActive(true);
-        }
+        if (ARMON.UI.AR.ARInventoryPanel.Current != null)
+            ARMON.UI.AR.ARInventoryPanel.Current.Close();
     }
 
     public void RefreshSlots()
