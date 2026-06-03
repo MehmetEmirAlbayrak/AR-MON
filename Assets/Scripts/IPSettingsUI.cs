@@ -326,7 +326,11 @@ public class IPSettingsUI : MonoBehaviour
 
         if (!string.IsNullOrEmpty(newIp))
         {
-            if (!newIp.StartsWith("http"))
+            // Local dev server sadece düz HTTP konuşur. https:// girilirse TLS handshake
+            // base-HTTP server'da BAD_REQUEST üretir; sessizce http://'e çevir.
+            if (newIp.StartsWith("https://"))
+                newIp = "http://" + newIp.Substring("https://".Length);
+            else if (!newIp.StartsWith("http://"))
                 newIp = "http://" + newIp;
 
             if (config != null)

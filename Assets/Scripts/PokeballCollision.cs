@@ -190,14 +190,18 @@ public class PokeballCollision : MonoBehaviour
         // Parlama efekti
         yield return StartCoroutine(FlashEffect());
         
-        // Pokemon'u çantaya ekle
-        string prefabId = PokemonPrefabRegistry.GetPrefabId(capturedPokemon);
-        string pokemonName = wildPokemonData != null ? wildPokemonData.pokemonName : prefabId;
+        // Pokemon'u çantaya ekle — speciesId üzerinden (PokemonSpeciesRegistry ile uyumlu)
+        string speciesId = (wildPokemonData != null && wildPokemonData.species != null)
+            ? wildPokemonData.species.speciesId
+            : (capturedPokemon != null ? capturedPokemon.name.Replace("(Clone)", "").Trim() : "");
+        string pokemonName = wildPokemonData != null ? wildPokemonData.pokemonName : speciesId;
         int pokemonLevel = wildPokemonData != null ? wildPokemonData.level : 1;
-        
+
         if (PokemonBag.Instance != null)
         {
-            PokemonBag.Instance.AddPokemon(pokemonName, pokemonLevel, prefabId);
+            // prefabId == speciesId: PokemonData ctor speciesId'yi prefabId'den kopyalar.
+            PokemonBag.Instance.AddPokemon(pokemonName, pokemonLevel, speciesId);
+            ARMON.Quest.QuestManager.Instance?.OnPokemonCaught(speciesId);
         }
         
         Destroy(capturedPokemon);

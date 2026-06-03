@@ -21,7 +21,7 @@ An AR-based mobile game project similar to Pokemon. Offers an experience of catc
 
 ## 📋 Requirements
 
-- Unity 2021.3 or higher
+- Unity 6000.2.8f or higher
 - Required SDKs for Android/iOS development
 - AR-capable device
 

@@ -33,12 +33,12 @@ public class ObjectSwapManager : MonoBehaviour
     public float assumedGroundOffsetY = 1.5f;
 
     [Header("Dedup / Confidence Gate")]
-    [Tooltip("Bir bucket'a bu kadar detection düşmeden spawn etme")]
-    public int candidateConfirmCount = 3;
-    [Tooltip("Confirm penceresi (saniye)")]
-    public float candidateWindowSeconds = 2f;
-    [Tooltip("Spatial hash hücresinin minimum kenarı (metre)")]
-    public float minCellSize = 0.3f;
+    [Tooltip("Bir bucket'a bu kadar detection düşmeden spawn etme. ~1 Hz polling'de 2 idealdir.")]
+    public int candidateConfirmCount = 2;
+    [Tooltip("Confirm penceresi (saniye). 1 Hz polling'de 4s = 3-4 deneme şansı verir.")]
+    public float candidateWindowSeconds = 4f;
+    [Tooltip("Spatial hash hücresinin minimum kenarı (metre). Kamera titreşimini absorbe eder.")]
+    public float minCellSize = 0.6f;
 
     [Header("Boyut")]
     [Tooltip("Mesafe x bbox formülünden gelen değer için alt sınır (metre). Saçma 0'ları engeller.")]
@@ -58,7 +58,7 @@ public class ObjectSwapManager : MonoBehaviour
     [Header("Bilgi")]
     public List<DetectedObject> LastDetectedObjects { get; private set; } = new List<DetectedObject>();
 
-    enum ResolveSource { None, Plane, Depth, Fallback }
+    enum ResolveSource { None, Plane, InferredGround, Depth, Fallback }
 
     class SpawnedObjectInfo
     {
@@ -189,10 +189,11 @@ public class ObjectSwapManager : MonoBehaviour
         rot = r.rotation;
         plane = r.plane;
         source = r.source switch {
-            ARMON.AR.ResolveSource.Plane    => ResolveSource.Plane,
-            ARMON.AR.ResolveSource.Depth    => ResolveSource.Depth,
-            ARMON.AR.ResolveSource.Fallback => ResolveSource.Fallback,
-            _                                => ResolveSource.None,
+            ARMON.AR.ResolveSource.Plane          => ResolveSource.Plane,
+            ARMON.AR.ResolveSource.InferredGround => ResolveSource.InferredGround,
+            ARMON.AR.ResolveSource.Depth          => ResolveSource.Depth,
+            ARMON.AR.ResolveSource.Fallback       => ResolveSource.Fallback,
+            _                                      => ResolveSource.None,
         };
         return true;
     }

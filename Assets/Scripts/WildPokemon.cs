@@ -21,6 +21,12 @@ public class WildPokemon : MonoBehaviour
     [Header("Yakalama Ayarları")]
     [Range(0f, 1f)]
     public float baseCatchRate = 0.7f; // Temel yakalama oranı (%70)
+
+    [Header("Quest (TrainerBattle)")]
+    [Tooltip("True = trainer's pokemon; never catchable; counts to TrainerBattle quest instead of DefeatWild.")]
+    public bool isTrainerPokemon = false;
+    [Tooltip("If isTrainerPokemon, the QuestInstance.npcAnchorId this trainer belongs to.")]
+    public string questOwnerAnchorId = "";
     
     [Header("Savaş Ayarları")]
     public float attackCooldown = 2f;
@@ -50,12 +56,10 @@ public class WildPokemon : MonoBehaviour
         // Level'e göre statları hesapla
         CalculateStats();
         
-        // Click detection için collider ekle (yoksa)
-        if (GetComponent<Collider>() == null)
+        // Pokeball collision için collider — vendor prefab'larda yoksa child mesh bounds'una göre kur
+        if (GetComponentInChildren<Collider>() == null)
         {
-            SphereCollider sphere = gameObject.AddComponent<SphereCollider>();
-            sphere.radius = 0.5f;
-            sphere.isTrigger = false; // Pokeball ile çarpışabilmesi için
+            EnsureBodyCollider();
         }
         
         // UI oluştur
@@ -122,6 +126,43 @@ public class WildPokemon : MonoBehaviour
         targetPlayer.TakeDamage(attack);
     }
     
+    /// <summary>
+    /// Vendor prefab'larda collider yoksa: child mesh bounds'unu hesapla, root'a uygun BoxCollider ekle.
+    /// Pokeball'un GÖRSEL body'e değdiğinde OnCollisionEnter ateşlemesini garanti eder.
+    /// </summary>
+    void EnsureBodyCollider()
+    {
+        var renderers = GetComponentsInChildren<Renderer>();
+        if (renderers.Length == 0)
+        {
+            // Fallback: küçük sphere
+            var s = gameObject.AddComponent<SphereCollider>();
+            s.radius = 0.3f;
+            s.isTrigger = false;
+            return;
+        }
+
+        // Dünya bounds'unu hesapla
+        Bounds world = renderers[0].bounds;
+        for (int i = 1; i < renderers.Length; i++) world.Encapsulate(renderers[i].bounds);
+
+        // World → local (scale dahil)
+        Vector3 localCenter = transform.InverseTransformPoint(world.center);
+        Vector3 lossy = transform.lossyScale;
+        Vector3 localSize = new Vector3(
+            world.size.x / Mathf.Max(0.0001f, Mathf.Abs(lossy.x)),
+            world.size.y / Mathf.Max(0.0001f, Mathf.Abs(lossy.y)),
+            world.size.z / Mathf.Max(0.0001f, Mathf.Abs(lossy.z)));
+
+        var box = gameObject.AddComponent<BoxCollider>();
+        box.center = localCenter;
+        // Hafif şişir — küçük modellerde pokeball hit'ini garantile
+        box.size = localSize * 1.15f;
+        box.isTrigger = false;
+
+        Debug.Log($"[{pokemonName}] BoxCollider eklendi: center={box.center} size={box.size}");
+    }
+
     void CalculateStats()
     {
         // Level 1'de düşük base statlar, level arttıkça güçlensin
@@ -207,7 +248,35 @@ public class WildPokemon : MonoBehaviour
     void OnFainted()
     {
         Debug.Log($"{pokemonName} bayıldı!");
-        // İstersen burada death animasyonu vs. ekleyebilirsin
+
+        // 1) BattleManager'a haber ver — XP, pot drop, UI update, destroy işler
+        var bm = FindFirstObjectByType<BattleManager>();
+        if (bm != null)
+        {
+            bm.OnWildPokemonDefeated(this);
+        }
+        else
+        {
+            // Fallback: BattleManager yoksa da anchor + objeyi temizle
+            CleanupAnchorAndSelf();
+        }
+    }
+
+    /// <summary>
+    /// Pokemon'un altında ARAnchor parent'ı varsa onunla birlikte temizler.
+    /// BattleManager Destroy(go) yapınca arta kalan boş anchor GameObject'i için de güvenli.
+    /// </summary>
+    public void CleanupAnchorAndSelf()
+    {
+        var parent = transform.parent;
+        if (parent != null && parent.GetComponent<UnityEngine.XR.ARFoundation.ARAnchor>() != null)
+        {
+            Destroy(parent.gameObject);
+        }
+        else
+        {
+            Destroy(gameObject);
+        }
     }
     
     public bool IsFainted => currentHealth <= 0;
@@ -230,6 +299,11 @@ public class WildPokemon : MonoBehaviour
     // Yakalama denemesi
     public bool TryCatch(float ballMultiplier)
     {
+        if (isTrainerPokemon)
+        {
+            Debug.Log($"[WildPokemon] {pokemonName} trainer's pokemon — not catchable.");
+            return false;
+        }
         float catchRate = GetCatchRate(ballMultiplier);
         float roll = Random.value;
         bool ok = roll <= catchRate;

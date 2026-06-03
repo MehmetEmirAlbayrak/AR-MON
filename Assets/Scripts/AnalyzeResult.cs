@@ -28,6 +28,10 @@ public class DetectedObject
     // [cx, cy] -> normalize merkez (0–1)
     public float[] center;
 
+    // MiDaS göreli derinlik: 0 = uzak, 1 = çok yakın. JsonUtility serverdan otomatik doldurur.
+    public float depth;
+    public float depth_normalized;
+
     // İstersen yardımcı property’ler:
     public float Width => bbox != null && bbox.Length == 4 ? Math.Abs(bbox[2] - bbox[0]) : 0f;
     public float Height => bbox != null && bbox.Length == 4 ? Math.Abs(bbox[3] - bbox[1]) : 0f;

@@ -179,19 +179,32 @@ public class BattleManager : MonoBehaviour
         // Spawn pozisyonu hesapla
         Vector3 spawnPos = CalculateSpawnPosition();
         
-        // Kayıtlı prefab'ı bul
+        // Kayıtlı prefab'ı bul — PokemonSpeciesRegistry üzerinden
         GameObject prefabToUse = null;
-        
-        // 1. PokemonPrefabRegistry'den prefab'ı bul
-        if (PokemonPrefabRegistry.Instance != null && !string.IsNullOrEmpty(pokemonData.prefabId))
+        ARMON.Data.PokemonSpecies species = null;
+
+        // 1. speciesId ile registry'den species + prefab çöz
+        if (registry != null)
         {
-            prefabToUse = PokemonPrefabRegistry.Instance.GetPrefab(pokemonData.prefabId);
+            string lookupId = !string.IsNullOrEmpty(pokemonData.speciesId)
+                ? pokemonData.speciesId
+                : pokemonData.prefabId; // legacy save fallback
+            species = registry.GetById(lookupId);
+            if (species != null)
+            {
+                // Evolved + NewPrefab varsa evolutionPrefab; yoksa basePrefab
+                bool useEvolved = pokemonData.hasEvolved
+                    && species.evolutionType == ARMON.Data.EvolutionType.NewPrefab
+                    && species.evolutionPrefab != null;
+                prefabToUse = useEvolved ? species.evolutionPrefab : species.basePrefab;
+            }
         }
-        
+
         // 2. Varsayılan prefab kullan
         if (prefabToUse == null && playerPokemonPrefab != null)
         {
             prefabToUse = playerPokemonPrefab;
+            Debug.LogWarning($"SummonPokemon: '{pokemonData.speciesId}' registry'de bulunamadı, varsayılan prefab kullanılıyor.");
         }
         
         // Pokemon oluştur
@@ -364,6 +377,7 @@ public class BattleManager : MonoBehaviour
         // XP ekle
         bool leveledUp = ActivePokemonData.AddXP(xpGain);
         PokemonBag.Instance?.SaveInventory();
+        ARMON.Quest.QuestManager.Instance?.OnWildPokemonDefeated(defeatedPokemon);
         
         // UI güncelle
         currentController.UpdateUI();
@@ -378,9 +392,16 @@ public class BattleManager : MonoBehaviour
         
         // Pot düşürme şansı
         DropPotions(wildLevel);
-        
-        // Vahşi Pokemon'u yok et
-        Destroy(defeatedPokemon.gameObject, 0.5f);
+
+        // Vahşi Pokemon + altındaki ARAnchor parent'ı 0.5s sonra temizle
+        var anchorTransform = defeatedPokemon.transform.parent;
+        GameObject toDestroy = defeatedPokemon.gameObject;
+        if (anchorTransform != null &&
+            anchorTransform.GetComponent<UnityEngine.XR.ARFoundation.ARAnchor>() != null)
+        {
+            toDestroy = anchorTransform.gameObject;
+        }
+        Destroy(toDestroy, 0.5f);
     }
     
     /// <summary>

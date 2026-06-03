@@ -84,7 +84,15 @@ public class BiomePokemonSpawner : MonoBehaviour
 
     void Start()
     {
-        _resolver = new ARPositionResolver();
+        // Outdoor ayarları — ObjectSwapManager ile aynı tutuluyor ki uzak Pokemon'lar da
+        // inferred ground sayesinde doğru zemine otursun.
+        _resolver = new ARPositionResolver
+        {
+            depthNearMeters = 0.5f,
+            depthFarMeters  = 18f,
+            fallbackMeters  = 4f,
+            groundOffsetY   = 1.5f,
+        };
     }
 
     public void PlacePokemonForBiome(string biome)
@@ -141,7 +149,13 @@ public class BiomePokemonSpawner : MonoBehaviour
             return;
 
         float dist = Vector3.Distance(cam.transform.position, r.position);
-        if (dist < minSpawnDistance || dist > maxSpawnDistance) return;
+        if (dist < minSpawnDistance || dist > maxSpawnDistance)
+        {
+            Debug.Log($"[Spawner] {species.speciesId} reddedildi — mesafe {dist:F2}m (min={minSpawnDistance}, max={maxSpawnDistance})");
+            return;
+        }
+
+        Debug.Log($"[Spawner] {species.speciesId} spawn → src={r.source} pos={r.position} dist={dist:F2}m groundY={ARMON.AR.ARPositionResolver.inferredGroundY:F3}");
 
         if (IsPositionTooClose(r.position, GetExistingPositions())) return;
 

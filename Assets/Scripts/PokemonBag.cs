@@ -34,6 +34,10 @@ public class PokemonBag : MonoBehaviour
     private PotionInventory potions;
     private const string SAVE_KEY = "PokemonBag";
     private const string POTION_SAVE_KEY = "PotionBag";
+    private const string POKEBALL_SAVE_KEY = "PokeballCount";
+    private int pokeballs;
+
+    public int PokeballCount => pokeballs;
 
     public List<PokemonData> CaughtPokemon => inventory.caughtPokemon;
     public PotionInventory Potions => potions;
@@ -46,6 +50,7 @@ public class PokemonBag : MonoBehaviour
             DontDestroyOnLoad(gameObject);
             LoadInventory();
             LoadPotions();
+            LoadPokeballs();
         }
         else
         {
@@ -388,6 +393,37 @@ public class PokemonBag : MonoBehaviour
         }
     }
     
+    // ========== POKEBALL SİSTEMİ ==========
+
+    /// <summary>Pokeball stoğuna ekle (quest reward vs).</summary>
+    public void AddPokeball(int amount)
+    {
+        if (amount <= 0) return;
+        pokeballs += amount;
+        SavePokeballs();
+        Debug.Log($"Pokeball x{amount} eklendi! Toplam: {pokeballs}");
+    }
+
+    /// <summary>Pokeball harca; 0 ise false.</summary>
+    public bool TryConsumePokeball()
+    {
+        if (pokeballs <= 0) return false;
+        pokeballs--;
+        SavePokeballs();
+        return true;
+    }
+
+    void SavePokeballs()
+    {
+        PlayerPrefs.SetInt(POKEBALL_SAVE_KEY, pokeballs);
+        PlayerPrefs.Save();
+    }
+
+    void LoadPokeballs()
+    {
+        pokeballs = PlayerPrefs.GetInt(POKEBALL_SAVE_KEY, 10);
+    }
+
     /// <summary>
     /// Pot envanterini sıfırla (test için)
     /// </summary>
