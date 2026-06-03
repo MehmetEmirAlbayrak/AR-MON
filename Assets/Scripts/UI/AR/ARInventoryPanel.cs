@@ -19,6 +19,11 @@ namespace ARMON.UI.AR
         readonly List<GameObject> slotObjects = new List<GameObject>();
         ARDetailSubPanel currentDetail;
 
+        GameObject pokemonTabRoot;
+        GameObject questTabRoot;
+        ARMON.UI.AR.Quest.ARQuestListPanel questListPanel;
+        Button pokeTabBtn, questTabBtn;
+
         public static ARInventoryPanel Open(Camera cam)
         {
             if (Current != null) return Current;
@@ -38,34 +43,44 @@ namespace ARMON.UI.AR
 
         protected override void BuildContent()
         {
-            // Background
             var bg = gameObject.AddComponent<Image>();
             bg.color = new Color(0.08f, 0.08f, 0.14f, 0.94f);
 
-            // Title
+            // === Tab strip (top 10%) ===
+            GameObject tabStrip = new GameObject("TabStrip", typeof(RectTransform));
+            tabStrip.transform.SetParent(transform, false);
+            var tsrt = (RectTransform)tabStrip.transform;
+            tsrt.anchorMin = new Vector2(0f, 0.90f);
+            tsrt.anchorMax = new Vector2(1f, 1f);
+            tsrt.offsetMin = Vector2.zero; tsrt.offsetMax = Vector2.zero;
+
+            pokeTabBtn  = CreateTabButton(tabStrip.transform, "POKEMON",  new Vector2(0.02f, 0.05f), new Vector2(0.49f, 0.95f), () => ShowTab(true));
+            questTabBtn = CreateTabButton(tabStrip.transform, "GÖREVLER", new Vector2(0.51f, 0.05f), new Vector2(0.98f, 0.95f), () => ShowTab(false));
+
+            // === Pokemon tab root ===
+            pokemonTabRoot = new GameObject("PokemonTab", typeof(RectTransform));
+            pokemonTabRoot.transform.SetParent(transform, false);
+            var prt = (RectTransform)pokemonTabRoot.transform;
+            prt.anchorMin = new Vector2(0f, 0.07f); prt.anchorMax = new Vector2(1f, 0.90f);
+            prt.offsetMin = Vector2.zero; prt.offsetMax = Vector2.zero;
+
             GameObject titleObj = new GameObject("Title");
-            titleObj.transform.SetParent(transform, false);
+            titleObj.transform.SetParent(pokemonTabRoot.transform, false);
             titleText = titleObj.AddComponent<TextMeshProUGUI>();
             titleText.text = "Pokemonlarım";
-            titleText.fontSize = 36;
-            titleText.fontStyle = FontStyles.Bold;
-            titleText.alignment = TextAlignmentOptions.Center;
-            titleText.color = Color.white;
+            titleText.fontSize = 30; titleText.fontStyle = FontStyles.Bold;
+            titleText.alignment = TextAlignmentOptions.Center; titleText.color = Color.white;
+            titleText.raycastTarget = false;
             var trt = (RectTransform)titleObj.transform;
-            trt.anchorMin = new Vector2(0f, 1f);
-            trt.anchorMax = new Vector2(1f, 1f);
-            trt.pivot = new Vector2(0.5f, 1f);
-            trt.anchoredPosition = new Vector2(0f, -10f);
-            trt.sizeDelta = new Vector2(0f, 60f);
+            trt.anchorMin = new Vector2(0f, 0.90f); trt.anchorMax = new Vector2(1f, 1f);
+            trt.offsetMin = Vector2.zero; trt.offsetMax = Vector2.zero;
 
-            // Scroll view
             GameObject scroll = new GameObject("Scroll", typeof(RectTransform));
-            scroll.transform.SetParent(transform, false);
+            scroll.transform.SetParent(pokemonTabRoot.transform, false);
             var scrt = (RectTransform)scroll.transform;
-            scrt.anchorMin = new Vector2(0.02f, 0.18f);
-            scrt.anchorMax = new Vector2(0.98f, 0.88f);
-            scrt.offsetMin = Vector2.zero;
-            scrt.offsetMax = Vector2.zero;
+            scrt.anchorMin = new Vector2(0.02f, 0.02f);
+            scrt.anchorMax = new Vector2(0.98f, 0.90f);
+            scrt.offsetMin = Vector2.zero; scrt.offsetMax = Vector2.zero;
             var scrollImg = scroll.AddComponent<Image>();
             scrollImg.color = new Color(0f, 0f, 0f, 0.3f);
             var sr = scroll.AddComponent<ScrollRect>();
@@ -84,8 +99,7 @@ namespace ARMON.UI.AR
             var crt = (RectTransform)content.transform;
             crt.anchorMin = new Vector2(0, 1); crt.anchorMax = new Vector2(1, 1);
             crt.pivot = new Vector2(0.5f, 1f);
-            crt.anchoredPosition = Vector2.zero;
-            crt.sizeDelta = Vector2.zero;
+            crt.anchoredPosition = Vector2.zero; crt.sizeDelta = Vector2.zero;
             var vlg = content.AddComponent<VerticalLayoutGroup>();
             vlg.spacing = 6; vlg.padding = new RectOffset(8, 8, 8, 8);
             vlg.childControlWidth = true; vlg.childForceExpandWidth = true;
@@ -95,7 +109,18 @@ namespace ARMON.UI.AR
             sr.viewport = vp; sr.content = crt;
             slotContainer = content.transform;
 
-            // Close button
+            // === Quest tab root ===
+            questTabRoot = new GameObject("QuestTab", typeof(RectTransform));
+            questTabRoot.transform.SetParent(transform, false);
+            var qrt = (RectTransform)questTabRoot.transform;
+            qrt.anchorMin = new Vector2(0f, 0.07f); qrt.anchorMax = new Vector2(1f, 0.90f);
+            qrt.offsetMin = Vector2.zero; qrt.offsetMax = Vector2.zero;
+            var qListGo = new GameObject("QuestList");
+            qListGo.transform.SetParent(questTabRoot.transform, false);
+            questListPanel = qListGo.AddComponent<ARMON.UI.AR.Quest.ARQuestListPanel>();
+            questListPanel.Init((RectTransform)questTabRoot.transform);
+
+            // === Close button (root, bottom strip) ===
             GameObject closeBtn = new GameObject("CloseBtn");
             closeBtn.transform.SetParent(transform, false);
             var cbImg = closeBtn.AddComponent<Image>();
@@ -104,20 +129,62 @@ namespace ARMON.UI.AR
             cbBtn.targetGraphic = cbImg;
             cbBtn.onClick.AddListener(Close);
             var cbrt = (RectTransform)closeBtn.transform;
-            cbrt.anchorMin = new Vector2(0.1f, 0.02f);
-            cbrt.anchorMax = new Vector2(0.9f, 0.14f);
+            cbrt.anchorMin = new Vector2(0.35f, 0.005f);
+            cbrt.anchorMax = new Vector2(0.65f, 0.06f);
             cbrt.offsetMin = Vector2.zero; cbrt.offsetMax = Vector2.zero;
 
             GameObject cbTxt = new GameObject("Text");
             cbTxt.transform.SetParent(closeBtn.transform, false);
             var ct = cbTxt.AddComponent<TextMeshProUGUI>();
-            ct.text = "KAPAT"; ct.fontSize = 30; ct.fontStyle = FontStyles.Bold;
+            ct.text = "KAPAT"; ct.fontSize = 26; ct.fontStyle = FontStyles.Bold;
             ct.alignment = TextAlignmentOptions.Center; ct.color = Color.white;
+            ct.raycastTarget = false;
             var ctrt = (RectTransform)cbTxt.transform;
             ctrt.anchorMin = Vector2.zero; ctrt.anchorMax = Vector2.one;
             ctrt.offsetMin = Vector2.zero; ctrt.offsetMax = Vector2.zero;
 
+            ShowTab(true);
             RefreshSlots();
+        }
+
+        Button CreateTabButton(Transform parent, string label, Vector2 anchorMin, Vector2 anchorMax, UnityEngine.Events.UnityAction onClick)
+        {
+            GameObject go = new GameObject($"Tab_{label}");
+            go.transform.SetParent(parent, false);
+            var img = go.AddComponent<Image>();
+            img.color = new Color(0.18f, 0.18f, 0.28f, 1f);
+            var btn = go.AddComponent<Button>();
+            btn.targetGraphic = img;
+            btn.onClick.AddListener(onClick);
+            var rt = (RectTransform)go.transform;
+            rt.anchorMin = anchorMin; rt.anchorMax = anchorMax;
+            rt.offsetMin = Vector2.zero; rt.offsetMax = Vector2.zero;
+
+            GameObject txt = new GameObject("Text");
+            txt.transform.SetParent(go.transform, false);
+            var t = txt.AddComponent<TextMeshProUGUI>();
+            t.text = label; t.fontSize = 26; t.fontStyle = FontStyles.Bold;
+            t.alignment = TextAlignmentOptions.Center; t.color = Color.white;
+            t.raycastTarget = false;
+            var trt = (RectTransform)txt.transform;
+            trt.anchorMin = Vector2.zero; trt.anchorMax = Vector2.one;
+            trt.offsetMin = Vector2.zero; trt.offsetMax = Vector2.zero;
+            return btn;
+        }
+
+        void ShowTab(bool pokemon)
+        {
+            if (pokemonTabRoot != null) pokemonTabRoot.SetActive(pokemon);
+            if (questTabRoot != null)   questTabRoot.SetActive(!pokemon);
+            if (pokeTabBtn != null)
+                pokeTabBtn.GetComponent<Image>().color = pokemon
+                    ? new Color(0.32f, 0.32f, 0.55f, 1f)
+                    : new Color(0.18f, 0.18f, 0.28f, 1f);
+            if (questTabBtn != null)
+                questTabBtn.GetComponent<Image>().color = !pokemon
+                    ? new Color(0.32f, 0.32f, 0.55f, 1f)
+                    : new Color(0.18f, 0.18f, 0.28f, 1f);
+            if (!pokemon && questListPanel != null) questListPanel.Refresh();
         }
 
         public void RefreshSlots()
