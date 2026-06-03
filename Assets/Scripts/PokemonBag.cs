@@ -60,11 +60,8 @@ public class PokemonBag : MonoBehaviour
         // Oyun başladığında otomatik iyileştirme yapma - potlarla manuel iyileştirsin
         // HealAllPokemon();
         Debug.Log($"Çanta yüklendi! Potlar: {potions.smallPotions} küçük, {potions.superPotions} süper, {potions.hyperPotions} hyper, {potions.revives} revive");
-        potions.smallPotions = startSmallPotions;
-        potions.superPotions = startSuperPotions;
-        potions.hyperPotions = startHyperPotions;
-        potions.revives = startRevives;
-        SavePotions();
+        // NOT: starter potion init artık LoadPotions içinde (PlayerPrefs key yoksa) yapılıyor.
+        // Burada hard-set yapmak save edilen ödülleri her restart'ta silerdi.
     }
 
     public PokemonData AddPokemon(string pokemonName, int level = 1, string prefabId = "")
@@ -389,7 +386,15 @@ public class PokemonBag : MonoBehaviour
         }
         else
         {
-            potions = new PotionInventory();
+            // İlk açılış: starter potion'ları ata + kaydet
+            potions = new PotionInventory
+            {
+                smallPotions = startSmallPotions,
+                superPotions = startSuperPotions,
+                hyperPotions = startHyperPotions,
+                revives = startRevives,
+            };
+            SavePotions();
         }
     }
     

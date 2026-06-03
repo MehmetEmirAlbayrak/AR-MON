@@ -192,6 +192,9 @@ namespace ARMON.UI.AR.Quest
             if (quest == null || npc == null) return;
             quest.state = QuestState.Active;
 
+            // Önce persist — sonra NPC destroy (crash window'da phantom quest oluşmasını önle).
+            QuestManager.Instance?.OnQuestsChangedForceSave();
+
             if (quest.type == QuestType.TrainerBattle)
             {
                 SpawnTrainerPokemon(0);
@@ -202,8 +205,6 @@ namespace ARMON.UI.AR.Quest
                 npc.DestroyNpcAndAnchor();
                 Close();
             }
-
-            QuestManager.Instance?.OnQuestsChangedForceSave();
         }
 
         void OnReject()
@@ -243,12 +244,14 @@ namespace ARMON.UI.AR.Quest
             Vector3 fwd = npc.transform.forward;
             Vector3 spawnPos = npc.transform.position + fwd * 1.5f;
             GameObject mon = Instantiate(species.basePrefab, spawnPos, Quaternion.LookRotation(-fwd));
+            mon.SetActive(false);
             var wp = mon.GetComponent<WildPokemon>();
             if (wp == null) wp = mon.AddComponent<WildPokemon>();
             wp.species = species;
             wp.pokemonName = species.displayName;
             wp.isTrainerPokemon = true;
             wp.questOwnerAnchorId = quest.npcAnchorId;
+            mon.SetActive(true);
         }
     }
 }

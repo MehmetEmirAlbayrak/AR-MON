@@ -244,9 +244,13 @@ public class WildPokemon : MonoBehaviour
         }
     }
     
+    private bool hasFainted = false;
+
     // Bayıldığında
     void OnFainted()
     {
+        if (hasFainted) return;
+        hasFainted = true;
         Debug.Log($"{pokemonName} bayıldı!");
 
         // 1) BattleManager'a haber ver — XP, pot drop, UI update, destroy işler

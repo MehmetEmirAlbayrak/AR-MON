@@ -126,6 +126,9 @@ public class BiomePokemonSpawner : MonoBehaviour
         Camera cam = Camera.main;
         if (cam == null) return;
 
+        // Destroy edilmiş entry'leri temizle (catch / battle defeat sonrası).
+        currentPokemons.RemoveAll(p => p == null);
+
         // Pick screen pos: detected object center if any, else random in lower half
         Vector2 screenPos;
         float depthHint = 0f;

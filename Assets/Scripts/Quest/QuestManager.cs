@@ -169,13 +169,16 @@ namespace ARMON.Quest
             }
             Vector3 fwd = owner.transform.forward;
             Vector3 spawnPos = owner.transform.position + fwd * 1.5f;
+            // SetActive(false) before instantiate avoids Awake/Start running with isTrainerPokemon=false.
             GameObject mon = GameObject.Instantiate(species.basePrefab, spawnPos, Quaternion.LookRotation(-fwd));
+            mon.SetActive(false);
             var wp = mon.GetComponent<WildPokemon>();
             if (wp == null) wp = mon.AddComponent<WildPokemon>();
             wp.species = species;
             wp.pokemonName = species.displayName;
             wp.isTrainerPokemon = true;
             wp.questOwnerAnchorId = q.npcAnchorId;
+            mon.SetActive(true);
         }
 
         // ---------- claim ----------

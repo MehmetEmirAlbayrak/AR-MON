@@ -43,16 +43,31 @@ namespace ARMON.Quest
             if (cam == null) return;
 
             Vector2? screenPoint = null;
+            int touchFingerId = -1;
             if (Input.touchCount > 0)
             {
                 var t = Input.GetTouch(0);
-                if (t.phase == TouchPhase.Began) screenPoint = t.position;
+                if (t.phase == TouchPhase.Began) { screenPoint = t.position; touchFingerId = t.fingerId; }
             }
             else if (Input.GetMouseButtonDown(0))
             {
                 screenPoint = Input.mousePosition;
             }
             if (!screenPoint.HasValue) return;
+
+            // UI üzerinde tıklama varsa (inventory butonları vs) NPC dialog'unu açma.
+            var es = UnityEngine.EventSystems.EventSystem.current;
+            if (es != null)
+            {
+                if (touchFingerId >= 0)
+                {
+                    if (es.IsPointerOverGameObject(touchFingerId)) return;
+                }
+                else if (es.IsPointerOverGameObject())
+                {
+                    return;
+                }
+            }
 
             Ray r = cam.ScreenPointToRay(screenPoint.Value);
             if (Physics.Raycast(r, out RaycastHit hit, 50f))

@@ -235,13 +235,10 @@ public class PlayerPokemonController : MonoBehaviour
             target.TakeDamage(damage);
         }
         
-        // Öldü mü kontrol et
+        // Öldü mü kontrol et — OnFainted (TakeDamage → OnFainted → bm.OnWildPokemonDefeated) zaten halletti.
+        // Burada sadece chase state'i sıfırla; XP/quest hook double-fire önlemek için OnWildPokemonDefeated'i ÇAĞIRMA.
         if (target.IsFainted)
         {
-            if (battleManager != null)
-            {
-                battleManager.OnWildPokemonDefeated(target);
-            }
             currentTarget = null;
             isChasing = false;
         }

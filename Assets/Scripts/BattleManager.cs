@@ -332,13 +332,18 @@ public class BattleManager : MonoBehaviour
     Vector3 CalculateSpawnPosition()
     {
         Camera cam = Camera.main;
+        if (cam == null)
+        {
+            Debug.LogWarning("[BattleManager] Camera.main null — falling back to transform-relative spawn");
+            return transform.position + Vector3.forward * spawnDistance;
+        }
         Vector3 forward = cam.transform.forward;
         forward.y = 0;
         forward.Normalize();
-        
+
         Vector3 spawnPos = cam.transform.position + forward * spawnDistance;
         spawnPos.y = spawnHeight;
-        
+
         return spawnPos;
     }
 

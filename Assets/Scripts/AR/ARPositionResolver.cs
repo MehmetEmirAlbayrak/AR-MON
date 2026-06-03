@@ -44,6 +44,13 @@ namespace ARMON.AR
         /// <summary>Test/reset için kullanılabilir.</summary>
         public static void ResetInferredGround() { inferredGroundY = float.NaN; }
 
+        /// <summary>
+        /// Editor'da Play mode'a her girişte ve build'de her startup'ta static state'i sıfırla.
+        /// "Reload Domain = false" senaryosunda eski groundY'nin sızmasını engeller.
+        /// </summary>
+        [RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
+        static void ResetStaticsOnPlay() { inferredGroundY = float.NaN; }
+
         /// <summary>How close (XZ meters) a horizontal plane must be to the camera to be considered the ground.</summary>
         public float groundLearnMaxXZDistance = 4f;
 
