@@ -34,11 +34,8 @@ public class BeamProjectile : MonoBehaviour
         if (travelSeconds <= 0f) return;
         t += Time.deltaTime / travelSeconds;
         transform.position = Vector3.Lerp(start, end, Mathf.Clamp01(t));
-        if (target != null && t >= 1f)
-        {
-            target.TakeDamage(damage);
-            Destroy(gameObject);
-        }
-        else if (t >= 1f) Destroy(gameObject);
+        // Hasar UYGULANMAZ — saldıran (PlayerPokemonController.Attack) hasarı anında verir;
+        // beam yalnızca görsel. Burada da TakeDamage çağırmak hasarı İKİ KEZ uygulardı.
+        if (t >= 1f) Destroy(gameObject);
     }
 }

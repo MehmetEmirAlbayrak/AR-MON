@@ -17,7 +17,7 @@ namespace ARMON.UI.AR
                 Debug.LogWarning("[ARBagButton] ARHudCanvas.Instance null — bag button deferred.");
                 return;
             }
-            Mount(ARHudCanvas.Instance.TopRightSlot);
+            Mount(ARHudCanvas.Instance.BottomRightSlot);
         }
 
         void Mount(Transform slot)
@@ -31,9 +31,9 @@ namespace ARMON.UI.AR
             b.onClick.AddListener(OnClicked);
 
             var rt = (RectTransform)btn.transform;
-            rt.anchorMin = new Vector2(1f, 1f);
-            rt.anchorMax = new Vector2(1f, 1f);
-            rt.pivot     = new Vector2(1f, 1f);
+            rt.anchorMin = new Vector2(1f, 0f);
+            rt.anchorMax = new Vector2(1f, 0f);
+            rt.pivot     = new Vector2(1f, 0f);
             rt.anchoredPosition = Vector2.zero;
             rt.sizeDelta = new Vector2(140f, 70f);
 

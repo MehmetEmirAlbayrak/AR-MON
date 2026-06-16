@@ -603,7 +603,8 @@ PlayerSettings:
   enableInternalProfiler: 0
   logObjCUncaughtExceptions: 1
   enableCrashReportAPI: 0
-  cameraUsageDescription: Augmented Reality requires the camera
+  cameraUsageDescription: AR-MON uses the camera to detect nature and place creatures
+    in AR.
   locationUsageDescription: 
   microphoneUsageDescription: 
   bluetoothUsageDescription: 

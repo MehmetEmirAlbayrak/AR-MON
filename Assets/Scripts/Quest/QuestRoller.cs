@@ -33,8 +33,9 @@ namespace ARMON.Quest
                 q.rewards = new List<QuestReward>
                 {
                     new QuestReward(RewardItem.HyperPotion, 1),
-                    new QuestReward(RewardItem.Revive,     2),
-                    new QuestReward(RewardItem.Pokeball,   3),
+                    new QuestReward(RewardItem.Revive,      2),
+                    new QuestReward(RewardItem.UltraBall,   1),
+                    new QuestReward(RewardItem.GreatBall,   2),
                 };
             }
             else
@@ -51,23 +52,24 @@ namespace ARMON.Quest
             var list = new List<QuestReward>();
             if (target <= 3)
             {
-                list.Add(new QuestReward(RewardItem.Pokeball, 1));
+                list.Add(new QuestReward(RewardItem.GreatBall, 1));
             }
             else if (target == 4)
             {
-                list.Add(new QuestReward(RewardItem.Pokeball, 2));
+                list.Add(new QuestReward(RewardItem.GreatBall, 2));
                 list.Add(new QuestReward(RewardItem.SmallPotion, 1));
             }
             else
             {
                 if (type == QuestType.DefeatWild)
                 {
-                    list.Add(new QuestReward(RewardItem.Pokeball, 3));
+                    list.Add(new QuestReward(RewardItem.UltraBall, 1));
+                    list.Add(new QuestReward(RewardItem.GreatBall, 2));
                     list.Add(new QuestReward(RewardItem.SuperPotion, 1));
                 }
                 else
                 {
-                    list.Add(new QuestReward(RewardItem.Pokeball, 2));
+                    list.Add(new QuestReward(RewardItem.GreatBall, 3));
                     list.Add(new QuestReward(RewardItem.SmallPotion, 1));
                 }
             }

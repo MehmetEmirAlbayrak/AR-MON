@@ -9,6 +9,9 @@ public class AnalyzeResult
     // Flask'tan gelen biome string'i
     public string biome;
 
+    // Biome güven skoru (0-1) — server "biome_confidence" alanı
+    public float biome_confidence;
+
     // List yerine dizi: JsonUtility için daha problemsiz
     public DetectedObject[] objects;
 }

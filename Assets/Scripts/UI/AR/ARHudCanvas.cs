@@ -4,25 +4,28 @@ using UnityEngine.UI;
 namespace ARMON.UI.AR
 {
     /// <summary>
-    /// Camera-attached world-space HUD. Singleton.
-    /// Exposes 3 slot transforms where other UI scripts mount their content:
-    ///   - topLeftSlot     → DetectionInfoUI compact summary
-    ///   - topRightSlot    → Bag icon button
-    ///   - bottomCenterSlot → Pokeball selection UI
-    /// Sits 0.5m in front of the camera, follows automatically (canvas is a child of the camera).
+    /// Screen-space overlay HUD. Singleton.
+    /// Exposes 5 slot transforms where other UI scripts mount their content:
+    ///   - TopLeftSlot      → DetectionInfoUI compact summary
+    ///   - TopRightSlot     → (reserved)
+    ///   - BottomLeftSlot   → Pokeball selection UI
+    ///   - BottomRightSlot  → Bag icon button
+    ///   - BottomCenterSlot → (reserved)
+    /// Renders directly to screen, independent of camera. Stable under XR Simulator,
+    /// AR Foundation camera swaps, and editor Game view.
     /// </summary>
+    [RequireComponent(typeof(RectTransform))]
     public class ARHudCanvas : MonoBehaviour
     {
         public static ARHudCanvas Instance { get; private set; }
 
-        [Tooltip("World units in meters from camera to HUD plane")]
-        public float distanceFromCamera = 0.5f;
+        [Tooltip("Reference resolution for CanvasScaler — designed for portrait phones.")]
+        public Vector2 referenceResolution = new Vector2(1080f, 1920f);
 
-        [Tooltip("HUD plane size in meters (X = width, Y = height)")]
-        public Vector2 hudSize = new Vector2(0.6f, 1.0f);
-
-        public Transform TopLeftSlot     { get; private set; }
-        public Transform TopRightSlot    { get; private set; }
+        public Transform TopLeftSlot      { get; private set; }
+        public Transform TopRightSlot     { get; private set; }
+        public Transform BottomLeftSlot   { get; private set; }
+        public Transform BottomRightSlot  { get; private set; }
         public Transform BottomCenterSlot { get; private set; }
 
         Canvas _canvas;
@@ -39,50 +42,34 @@ namespace ARMON.UI.AR
             if (Instance == this) Instance = null;
         }
 
-        void Start()
-        {
-            AttachToCamera();
-        }
-
-        void AttachToCamera()
-        {
-            Camera cam = Camera.main;
-            if (cam == null)
-            {
-                Debug.LogWarning("[ARHudCanvas] Camera.main null — HUD root not parented yet.");
-                return;
-            }
-            transform.SetParent(cam.transform, false);
-            transform.localPosition = new Vector3(0f, 0f, distanceFromCamera);
-            transform.localRotation = Quaternion.identity;
-        }
-
-        void Update()
-        {
-            // Re-parent if Camera.main appears later (AR Foundation may swap cameras).
-            if (transform.parent == null || transform.parent.GetComponent<Camera>() == null)
-                AttachToCamera();
-        }
-
         void BuildCanvas()
         {
+            // Detach from any parent (e.g. previously camera-parented setups).
+            if (transform.parent != null) transform.SetParent(null, false);
+
             _canvas = gameObject.GetComponent<Canvas>();
             if (_canvas == null) _canvas = gameObject.AddComponent<Canvas>();
-            _canvas.renderMode = RenderMode.WorldSpace;
+            _canvas.renderMode = RenderMode.ScreenSpaceOverlay;
             _canvas.sortingOrder = 10;
 
-            if (gameObject.GetComponent<CanvasScaler>() == null)
-                gameObject.AddComponent<CanvasScaler>();
+            var scaler = gameObject.GetComponent<CanvasScaler>();
+            if (scaler == null) scaler = gameObject.AddComponent<CanvasScaler>();
+            scaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
+            scaler.referenceResolution = referenceResolution;
+            scaler.screenMatchMode = CanvasScaler.ScreenMatchMode.MatchWidthOrHeight;
+            scaler.matchWidthOrHeight = 0.5f;
+
             if (gameObject.GetComponent<GraphicRaycaster>() == null)
                 gameObject.AddComponent<GraphicRaycaster>();
 
-            var rt = (RectTransform)transform;
-            rt.sizeDelta = new Vector2(hudSize.x * 1000f, hudSize.y * 1000f); // 1000 px = 1 m at scale 0.001
-            rt.localScale = Vector3.one * 0.001f;
-
-            TopLeftSlot      = CreateSlot("TopLeftSlot",      new Vector2(0f, 1f), new Vector2(0f, 1f), new Vector2(20f, -20f));
-            TopRightSlot     = CreateSlot("TopRightSlot",     new Vector2(1f, 1f), new Vector2(1f, 1f), new Vector2(-20f, -20f));
-            BottomCenterSlot = CreateSlot("BottomCenterSlot", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f, 40f));
+            // Insets from screen edges (in reference-resolution pixels).
+            const float edgePad = 40f;
+            const float bottomPad = 80f; // larger to clear iOS home indicator / Android nav bar
+            TopLeftSlot      = CreateSlot("TopLeftSlot",      new Vector2(0f, 1f),   new Vector2(0f, 1f),   new Vector2( edgePad, -edgePad));
+            TopRightSlot     = CreateSlot("TopRightSlot",     new Vector2(1f, 1f),   new Vector2(1f, 1f),   new Vector2(-edgePad, -edgePad));
+            BottomLeftSlot   = CreateSlot("BottomLeftSlot",   new Vector2(0f, 0f),   new Vector2(0f, 0f),   new Vector2( edgePad,  bottomPad));
+            BottomRightSlot  = CreateSlot("BottomRightSlot",  new Vector2(1f, 0f),   new Vector2(1f, 0f),   new Vector2(-edgePad,  bottomPad));
+            BottomCenterSlot = CreateSlot("BottomCenterSlot", new Vector2(0.5f, 0f), new Vector2(0.5f, 0f), new Vector2(0f,        bottomPad));
         }
 
         Transform CreateSlot(string name, Vector2 anchorMin, Vector2 anchorMax, Vector2 anchoredPos)
@@ -94,11 +81,11 @@ namespace ARMON.UI.AR
             rt.anchorMax = anchorMax;
             rt.pivot     = anchorMin;
             rt.anchoredPosition = anchoredPos;
-            rt.sizeDelta = new Vector2(300f, 200f);
+            rt.sizeDelta = new Vector2(400f, 250f);
             return go.transform;
         }
 
-        /// <summary>Ensure an EventSystem exists in scene so world-canvas buttons receive input.</summary>
+        /// <summary>Ensure an EventSystem exists in scene so canvas buttons receive input.</summary>
         public static void EnsureEventSystem()
         {
             if (UnityEngine.EventSystems.EventSystem.current != null) return;

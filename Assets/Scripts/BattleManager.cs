@@ -1,6 +1,8 @@
 using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine.XR.ARFoundation;
+using UnityEngine.XR.ARSubsystems;
 using ARMON.Data;
 
 public class BattleManager : MonoBehaviour
@@ -176,8 +178,11 @@ public class BattleManager : MonoBehaviour
             RecallPokemon();
         }
         
-        // Spawn pozisyonu hesapla
-        Vector3 spawnPos = CalculateSpawnPosition();
+        // Spawn pozisyonu: ÖNCE oyuncunun nişanladığı plane noktası (ekran ortası AR raycast).
+        // Kamera bir plane'e bakıyorsa Pokemon tam oraya doğar; bakmıyorsa kamera-önü fallback.
+        Vector3 spawnPos = TryGetAimedSpawnPosition(out Vector3 aimedPos)
+            ? aimedPos
+            : CalculateSpawnPosition();
         
         // Kayıtlı prefab'ı bul — PokemonSpeciesRegistry üzerinden
         GameObject prefabToUse = null;
@@ -327,7 +332,41 @@ public class BattleManager : MonoBehaviour
     }
 
     /// <summary>
-    /// Spawn pozisyonunu hesapla
+    /// Oyuncunun nişanladığı plane noktası: ekran ortasından AR raycast.
+    /// Yalnızca HorizontalUp plane, 0.5–8m mesafe penceresi. Başarısızsa false.
+    /// </summary>
+    bool TryGetAimedSpawnPosition(out Vector3 pos)
+    {
+        pos = default;
+        if (raycastManager == null) return false;
+        Camera cam = Camera.main;
+        if (cam == null) return false;
+
+        var hits = new List<ARRaycastHit>();
+        Vector2 screenCenter = new Vector2(Screen.width * 0.5f, Screen.height * 0.5f);
+        if (!raycastManager.Raycast(screenCenter, hits, TrackableType.PlaneWithinPolygon))
+            return false;
+
+        foreach (var h in hits)
+        {
+            ARPlane plane = planeManager != null ? planeManager.GetPlane(h.trackableId) : null;
+            if (plane == null) continue;
+            if (plane.alignment != PlaneAlignment.HorizontalUp) continue;
+
+            float dist = Vector3.Distance(cam.transform.position, h.pose.position);
+            if (dist < 0.5f || dist > 8f) continue;
+
+            pos = h.pose.position + Vector3.up * (spawnHeight + 0.01f);
+            return true;
+        }
+        return false;
+    }
+
+    /// <summary>
+    /// Fallback spawn pozisyonu (nişanlanan plane yoksa).
+    /// Y: mutlak dünya 0'ı DEĞİL — AR'da zemin çoğu zaman y≈-1.5 civarındadır. Öğrenilmiş
+    /// zemin (inferred ground) varsa onu, yoksa kameranın 1.5m altını kullan; spawnHeight
+    /// zemine göre ek ofsettir.
     /// </summary>
     Vector3 CalculateSpawnPosition()
     {
@@ -339,10 +378,20 @@ public class BattleManager : MonoBehaviour
         }
         Vector3 forward = cam.transform.forward;
         forward.y = 0;
+        // Kamera dik aşağı bakarken yatay forward sıfıra çöker — normalize edilirse spawn
+        // KAMERANIN İÇİNDE doğar ("place'e bakınca kamerada spawn" bug'ı). O durumda
+        // kameranın up vektörünün yatay izdüşümü oyuncunun "ilerisi"ni verir.
+        if (forward.sqrMagnitude < 1e-3f)
+            forward = Vector3.ProjectOnPlane(cam.transform.up, Vector3.up);
+        if (forward.sqrMagnitude < 1e-3f)
+            forward = Vector3.forward;
         forward.Normalize();
 
         Vector3 spawnPos = cam.transform.position + forward * spawnDistance;
-        spawnPos.y = spawnHeight;
+        float groundY = ARMON.AR.ARPositionResolver.HasInferredGround
+            ? ARMON.AR.ARPositionResolver.inferredGroundY
+            : cam.transform.position.y - 1.5f;
+        spawnPos.y = groundY + spawnHeight + 0.01f;
 
         return spawnPos;
     }

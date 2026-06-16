@@ -167,8 +167,14 @@ namespace ARMON.Quest
                 Debug.LogWarning("[QuestManager] Trainer NPC not in scene — cannot spawn next pokemon");
                 return;
             }
+            // NPC kapsülü anchor'ın üstünde durur — zemin hizası için anchor parent'ı referans al.
+            Transform groundRef = owner.transform.parent != null ? owner.transform.parent : owner.transform;
             Vector3 fwd = owner.transform.forward;
-            Vector3 spawnPos = owner.transform.position + fwd * 1.5f;
+            fwd.y = 0f;
+            if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
+            fwd.Normalize();
+            Vector3 spawnPos = groundRef.position + fwd * 1.5f;
+            spawnPos.y = groundRef.position.y + 0.01f;
             // SetActive(false) before instantiate avoids Awake/Start running with isTrainerPokemon=false.
             GameObject mon = GameObject.Instantiate(species.basePrefab, spawnPos, Quaternion.LookRotation(-fwd));
             mon.SetActive(false);
@@ -203,7 +209,9 @@ namespace ARMON.Quest
         {
             switch (r.item)
             {
-                case RewardItem.Pokeball:    PokemonBag.Instance.AddPokeball(r.count); break;
+                case RewardItem.Pokeball:    PokemonBag.Instance.AddBall(BallType.Normal, r.count); break;
+                case RewardItem.GreatBall:   PokemonBag.Instance.AddBall(BallType.Great,  r.count); break;
+                case RewardItem.UltraBall:   PokemonBag.Instance.AddBall(BallType.Ultra,  r.count); break;
                 case RewardItem.SmallPotion: PokemonBag.Instance.AddPotion(PotionType.SmallPotion, r.count); break;
                 case RewardItem.SuperPotion: PokemonBag.Instance.AddPotion(PotionType.SuperPotion, r.count); break;
                 case RewardItem.HyperPotion: PokemonBag.Instance.AddPotion(PotionType.HyperPotion, r.count); break;

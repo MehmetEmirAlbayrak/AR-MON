@@ -203,8 +203,13 @@ public class PokeballCollision : MonoBehaviour
             PokemonBag.Instance.AddPokemon(pokemonName, pokemonLevel, speciesId);
             ARMON.Quest.QuestManager.Instance?.OnPokemonCaught(speciesId);
         }
-        
-        Destroy(capturedPokemon);
+
+        // Pokemon'u ARAnchor parent'ıyla BİRLİKTE yok et — sadece pokemon'u silmek
+        // her başarılı yakalamada sahnede boş bir anchor GameObject'i sızdırıyordu.
+        if (wildPokemonData != null)
+            wildPokemonData.CleanupAnchorAndSelf();
+        else if (capturedPokemon != null)
+            Destroy(capturedPokemon);
         
         // Pokeball kaybolur
         yield return StartCoroutine(ShrinkAndDisappear());

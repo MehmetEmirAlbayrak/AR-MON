@@ -70,19 +70,34 @@ namespace ARMON.AR
             // Cheap — trackables.count is usually 0-5.
             UpdateInferredGround(cam, planeManager);
 
-            // 1) plane raycast — most accurate when available
+            // 1) plane raycast — most accurate when available.
+            // Yalnızca HorizontalUp (zemin) plane'leri kabul edilir: duvara (Vertical) veya
+            // tavana (HorizontalDown) spawn, objeyi yan yatmış/baş aşağı bırakır.
             if (raycastManager != null)
             {
                 var hits = new List<ARRaycastHit>();
                 if (raycastManager.Raycast(screenPos, hits, TrackableType.PlaneWithinPolygon)
                     && hits.Count > 0)
                 {
-                    result.position = hits[0].pose.position;
-                    result.rotation = hits[0].pose.rotation;
-                    result.source   = ResolveSource.Plane;
-                    if (planeManager != null)
-                        result.plane = planeManager.GetPlane(hits[0].trackableId);
-                    return true;
+                    for (int i = 0; i < hits.Count; i++)
+                    {
+                        ARPlane hitPlane = planeManager != null
+                            ? planeManager.GetPlane(hits[i].trackableId)
+                            : null;
+                        // Plane manager yoksa hizalamayı doğrulayamayız — hit'i reddet,
+                        // inferred-ground / depth katmanlarına düş.
+                        if (hitPlane == null) continue;
+                        if (hitPlane.alignment != PlaneAlignment.HorizontalUp) continue;
+
+                        Vector3 pos = hits[i].pose.position;
+                        result.position = pos;
+                        // Pose rotasyonu olduğu gibi KULLANMA — sadece Y ekseninde, kameraya
+                        // dönük dik duruş (X/Z eğimi sıfır).
+                        result.rotation = FaceCamera(pos, cam);
+                        result.source   = ResolveSource.Plane;
+                        result.plane    = hitPlane;
+                        return true;
+                    }
                 }
             }
 
@@ -113,7 +128,10 @@ namespace ARMON.AR
                 float meters = Mathf.Lerp(depthFarMeters, depthNearMeters, Mathf.Clamp01(depth01));
                 Ray ray = cam.ScreenPointToRay(screenPos);
                 Vector3 pos = ray.GetPoint(meters);
-                pos.y = Mathf.Min(pos.y, cam.transform.position.y - 0.05f);
+                // Objeyi göz hizasında bırakmak yerine yere indir (havada kalma bug'ı).
+                pos.y = !float.IsNaN(inferredGroundY)
+                    ? inferredGroundY
+                    : cam.transform.position.y - groundOffsetY;
                 result.position = pos;
                 result.rotation = FaceCamera(pos, cam);
                 result.source   = ResolveSource.Depth;
@@ -124,7 +142,10 @@ namespace ARMON.AR
             {
                 Ray ray = cam.ScreenPointToRay(screenPos);
                 Vector3 pos = ray.GetPoint(fallbackMeters);
-                pos.y = cam.transform.position.y - groundOffsetY;
+                // Öğrenilmiş zemin varsa onu kullan; yoksa kameranın altındaki varsayılan zemin.
+                pos.y = !float.IsNaN(inferredGroundY)
+                    ? inferredGroundY
+                    : cam.transform.position.y - groundOffsetY;
                 result.position = pos;
                 result.rotation = FaceCamera(pos, cam);
                 result.source   = ResolveSource.Fallback;
@@ -187,6 +208,41 @@ namespace ARMON.AR
             return dir.sqrMagnitude > 0.0001f
                 ? Quaternion.LookRotation(-dir)
                 : Quaternion.identity;
+        }
+
+        // ============ SPAWN DOĞRULAMA YARDIMCILARI ============
+
+        /// <summary>Herhangi bir yatay zemin öğrenildi mi? (Plane görüldüyse true)</summary>
+        public static bool HasInferredGround => !float.IsNaN(inferredGroundY);
+
+        /// <summary>
+        /// Kaynak "zemine bağlı" mı? Plane = doğrudan plane hit; InferredGround = öğrenilmiş
+        /// zemin Y'sine projeksiyon. Depth/Fallback da zemin ÖĞRENİLDİYSE zemine bağlıdır —
+        /// TryResolve tier 3/4 pozisyonun Y'sini inferredGroundY'ye indirir. Havada kalan
+        /// spawn'ların tek kaynağı, hiç plane görülmeden yapılan Depth/Fallback tahminleridir.
+        /// (Uzak ağaç/kaya taramalarında bbox merkezi ufkun ÜSTÜNDE kalır; ray zemini kesmez
+        /// ve çözüm Depth tier'a düşer — bunu kategorik reddetmek uzak taramaları öldürür.)
+        /// </summary>
+        public static bool IsGroundedSource(ResolveSource src)
+            => src == ResolveSource.Plane
+            || src == ResolveSource.InferredGround
+            || HasInferredGround;
+
+        /// <summary>Plane her iki boyutta da minSize'dan büyük mü?</summary>
+        public static bool IsPlaneLargeEnough(ARPlane plane, float minSize)
+            => plane != null && plane.size.x >= minSize && plane.size.y >= minSize;
+
+        /// <summary>
+        /// Dünya pozisyonu plane sınırından en az margin kadar içeride mi?
+        /// Kenara spawn edilen obje yarısı boşlukta sarkar; margin bunu önler.
+        /// </summary>
+        public static bool IsAwayFromPlaneEdge(ARPlane plane, Vector3 worldPos, float margin)
+        {
+            if (plane == null) return false;
+            Vector3 local = plane.transform.InverseTransformPoint(worldPos);
+            Vector2 ext = plane.extents; // yarı boyutlar (metre)
+            return Mathf.Abs(local.x) <= Mathf.Max(0f, ext.x - margin)
+                && Mathf.Abs(local.z) <= Mathf.Max(0f, ext.y - margin);
         }
     }
 }

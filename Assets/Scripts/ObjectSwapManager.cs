@@ -31,6 +31,8 @@ public class ObjectSwapManager : MonoBehaviour
     public float fallbackMeters = 2.5f;
     [Tooltip("Tahmini (depth-ray veya fallback) pozisyon Y'sini kameradan bu kadar düşür")]
     public float assumedGroundOffsetY = 1.5f;
+    [Tooltip("True: hiç plane görülmeden depth/fallback tahminiyle obje spawn edilmez (havada kalma önlemi)")]
+    public bool requireGroundedSpawn = true;
 
     [Header("Dedup / Confidence Gate")]
     [Tooltip("Bir bucket'a bu kadar detection düşmeden spawn etme. ~1 Hz polling'de 2 idealdir.")]
@@ -54,6 +56,8 @@ public class ObjectSwapManager : MonoBehaviour
     [Tooltip("Son görülmeden bu kadar saniye geçince spawn silinir (0 = kapalı)")]
     public float despawnStaleSeconds = 15f;
     public float despawnCheckInterval = 1f;
+    [Tooltip("Uzakta olsa bile son bu kadar saniyede yeniden görülen spawn silinmez — aktif taranan uzak objeler yaşar")]
+    public float farSeenGraceSeconds = 3f;
 
     [Header("Bilgi")]
     public List<DetectedObject> LastDetectedObjects { get; private set; } = new List<DetectedObject>();
@@ -69,6 +73,7 @@ public class ObjectSwapManager : MonoBehaviour
         public Vector3Int cell;
         public float spawnTime;
         public float lastSeenTime;
+        public TrackableId planeId = TrackableId.invalidId;
     }
 
     class CandidateBucket
@@ -100,6 +105,37 @@ public class ObjectSwapManager : MonoBehaviour
         InvokeRepeating(nameof(DespawnTick), despawnCheckInterval, despawnCheckInterval);
     }
 
+    void OnEnable()
+    {
+        if (planeManager != null)
+            planeManager.trackablesChanged.AddListener(OnPlanesChanged);
+    }
+
+    void OnDisable()
+    {
+        if (planeManager != null)
+            planeManager.trackablesChanged.RemoveListener(OnPlanesChanged);
+    }
+
+    /// <summary>Kaldırılan plane'lerin üzerine spawn edilmiş objeleri temizle.</summary>
+    void OnPlanesChanged(ARTrackablesChangedEventArgs<ARPlane> args)
+    {
+        if (args.removed == null || args.removed.Count == 0) return;
+        var toRemove = new List<(string, Vector3Int)>();
+        foreach (var removed in args.removed)
+        {
+            TrackableId removedId = removed.Key;
+            foreach (var kv in spawned)
+            {
+                if (kv.Value.planeId != removedId) continue;
+                if (kv.Value.gameObject != null) Destroy(kv.Value.gameObject);
+                if (kv.Value.anchor != null) Destroy(kv.Value.anchor.gameObject);
+                toRemove.Add(kv.Key);
+            }
+        }
+        foreach (var key in toRemove) spawned.Remove(key);
+    }
+
     public void PlaceObjects(List<DetectedObject> objects)
     {
         if (objects == null || objects.Count == 0) return;
@@ -127,6 +163,18 @@ public class ObjectSwapManager : MonoBehaviour
                 out ResolveSource src, out ARPlane hitPlane))
             return;
 
+        // Zemin doğrulama: hiç zemin öğrenilmeden yapılan depth/fallback TAHMİNLERİNİ engelle.
+        // Zemin öğrenildiyse Depth/Fallback da resolver tarafından zemine indirilir (grounded) —
+        // uzak objelerde bbox merkezi ufkun üstünde kaldığı için çözüm sık sık Depth tier'dan
+        // gelir; onu kategorik reddetmek uzak ağaç/kaya taramalarını tamamen öldürüyordu.
+        if (requireGroundedSpawn
+            && src != ResolveSource.Plane && src != ResolveSource.InferredGround
+            && !ARMON.AR.ARPositionResolver.HasInferredGround)
+        {
+            ARMON.UI.AR.ScanStatusUI.NotifyGroundRequired();
+            return;
+        }
+
         float realHeight = GetRealHeightForLabel(obj.label);
         float cellSize = Mathf.Max(minCellSize, realHeight * 0.5f);
         Vector3Int cell = WorldToCell(worldPos, cellSize);
@@ -138,6 +186,24 @@ public class ObjectSwapManager : MonoBehaviour
         {
             existing.lastSeenTime = Time.time;
             return;
+        }
+
+        // Uzakta hücre eşleşmesi güvenilmez: çözümleme gürültüsü mesafeyle büyür ve aynı
+        // gerçek obje her taramada komşu hücreye düşebilir. Aynı label'dan yeterince yakın
+        // bir spawn varsa onu "görüldü" say — kopya mesh + yanlış uzak-despawn churn'ünü önler.
+        Camera dedupCam = Camera.main;
+        float camDist = dedupCam != null
+            ? Vector3.Distance(dedupCam.transform.position, worldPos)
+            : 0f;
+        float dedupRadius = Mathf.Max(cellSize, camDist * 0.12f);
+        foreach (var kv in spawned)
+        {
+            if (kv.Value.label != label) continue;
+            if ((kv.Value.worldPosition - worldPos).sqrMagnitude <= dedupRadius * dedupRadius)
+            {
+                kv.Value.lastSeenTime = Time.time;
+                return;
+            }
         }
 
         // Candidate buffer
@@ -230,6 +296,7 @@ public class ObjectSwapManager : MonoBehaviour
             cell = cell,
             spawnTime = Time.time,
             lastSeenTime = Time.time,
+            planeId = plane != null ? plane.trackableId : TrackableId.invalidId,
         };
 
         Debug.Log($"Spawn: {label} @ {pos} (src={source}, anchor={(anchor != null)})");
@@ -291,7 +358,12 @@ public class ObjectSwapManager : MonoBehaviour
             if (info.gameObject == null) { toRemove.Add(kv.Key); continue; }
 
             float dist = Vector3.Distance(cam.transform.position, info.worldPosition);
-            bool tooFar = dist > despawnDistance;
+            // "Uzak" tek başına silme nedeni DEĞİL: oyuncu uzak bir objeyi aktif olarak
+            // tarıyorsa yaşamalı. Uzak + artık görülmüyor = oyuncu uzaklaşmış → temizle.
+            // (Eski `tooFar` tek başına, despawnDistance ötesindeki her spawn'ı daha
+            // taranırken 1 sn içinde siliyordu — uzak taramalar hiç görünmüyordu.)
+            bool seenRecently = (Time.time - info.lastSeenTime) <= farSeenGraceSeconds;
+            bool tooFar = dist > despawnDistance && !seenRecently;
             bool stale = despawnStaleSeconds > 0f
                          && (Time.time - info.lastSeenTime) > despawnStaleSeconds;
 

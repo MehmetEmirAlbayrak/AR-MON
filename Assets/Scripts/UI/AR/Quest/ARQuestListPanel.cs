@@ -18,8 +18,12 @@ namespace ARMON.UI.AR.Quest
 
         public void Init(RectTransform parent)
         {
-            var rt = (RectTransform)transform;
-            if (rt == null) rt = gameObject.AddComponent<RectTransform>();
+            var rt = transform as RectTransform;
+            if (rt == null)
+            {
+                Debug.LogError("[ARQuestListPanel] Owning GameObject must have a RectTransform — create it with `new GameObject(name, typeof(RectTransform))`.");
+                return;
+            }
             transform.SetParent(parent, false);
             rt.anchorMin = Vector2.zero;
             rt.anchorMax = Vector2.one;

@@ -397,8 +397,10 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::ARMON.Quest.QuestSpawner
   planeManager: {fileID: 692674515}
   anchorManager: {fileID: 692674516}
-  npcPrefab: {fileID: 0}
+  raycastManager: {fileID: 0}
+  npcPrefab: {fileID: 6182256961490819118, guid: c61dba1266c1fd049ad55afc0562d6a3, type: 3}
   minPlaneArea: 0.3
+  edgeMargin: 0.15
 --- !u!4 &63905840
 Transform:
   m_ObjectHideFlags: 0
@@ -633,9 +635,14 @@ MonoBehaviour:
   biomeSpawner: {fileID: 624609464}
   objectSwapManager: {fileID: 624609466}
   config: {fileID: 11400000, guid: 293c9c76dd1dd4482a71509b9cc5b285, type: 2}
-  detectionUI: {fileID: 798040976}
-  analyzeInterval: 1
+  detectionUI: {fileID: 355663341}
+  analyzeInterval: 1.5
   jpgQuality: 75
+  requestTimeoutSeconds: 5
+  minBiomeConfidence: 0.25
+  arCamera: {fileID: 0}
+  arCameraBackground: {fileID: 0}
+  captureLongSide: 640
 --- !u!4 &292535682
 Transform:
   m_ObjectHideFlags: 0
@@ -682,7 +689,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 346bad029ccccb34883e249778c14bf6, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokemonDetailUI
-  registry: {fileID: 11400000, guid: 58a182ef7bf47c54893f542e361207ec, type: 2}
 --- !u!114 &355663340
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -715,7 +721,7 @@ MonoBehaviour:
   biomePrefix: 'Biome: '
   objectsPrefix: 'Algilanan: '
   maxDisplayedObjects: 5
-  confidenceThreshold: 0.5
+  confidenceThreshold: 0.25
   biomeColor: {r: 0.2, g: 0.8, b: 0.4, a: 1}
   objectColor: {r: 0.4, g: 0.6, b: 1, a: 1}
   highConfidenceColor: {r: 0.2, g: 1, b: 0.2, a: 1}
@@ -883,16 +889,14 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 152ee2c2ddb3fe542a91a1547115ab61, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::ARMON.UI.AR.ARHudCanvas
-  distanceFromCamera: 0.5
-  hudSize: {x: 0.6, y: 1}
---- !u!4 &597998700
-Transform:
+  referenceResolution: {x: 1080, y: 1920}
+--- !u!224 &597998700
+RectTransform:
   m_ObjectHideFlags: 0
   m_CorrespondingSourceObject: {fileID: 0}
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 597998698}
-  serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
   m_LocalScale: {x: 1, y: 1, z: 1}
@@ -900,6 +904,11 @@ Transform:
   m_Children: []
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_AnchorMin: {x: 0, y: 0}
+  m_AnchorMax: {x: 0, y: 0}
+  m_AnchoredPosition: {x: 0, y: 0}
+  m_SizeDelta: {x: 100, y: 100}
+  m_Pivot: {x: 0.5, y: 0.5}
 --- !u!1 &605147286
 GameObject:
   m_ObjectHideFlags: 0
@@ -929,16 +938,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 4af1d0642e1c4a64a8b8c8949eb7397c, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::PokemonInventoryUI
-  mainCanvas: {fileID: 0}
-  inventoryPanel: {fileID: 0}
-  pokemonSlotPrefab: {fileID: 0}
-  slotContainer: {fileID: 0}
-  closeButton: {fileID: 0}
-  openButton: {fileID: 0}
-  titleText: {fileID: 0}
-  normalSlotColor: {r: 0.25, g: 0.25, b: 0.35, a: 1}
-  selectedSlotColor: {r: 0.3, g: 0.5, b: 0.8, a: 1}
-  faintedSlotColor: {r: 0.5, g: 0.25, b: 0.25, a: 1}
 --- !u!4 &605147288
 Transform:
   m_ObjectHideFlags: 0
@@ -993,6 +992,7 @@ MonoBehaviour:
   maxSpawnDistance: 15
   minDistanceBetweenPokemons: 0.3
   spreadRadius: 1
+  globalScale: 0.205
   sizeVariation: {x: 0.7, y: 1.3}
   minPokemonLevel: 1
   maxPokemonLevel: 20
@@ -1002,6 +1002,13 @@ MonoBehaviour:
   objectProximityMax: 2
   multiRaycastRadius: 150
   spawnCooldown: 10
+  requireGroundedSpawn: 1
+  minPlaneSize: 0.3
+  planeEdgeMargin: 0.15
+  spawnYOffset: 0.01
+  maxConcurrentPokemons: 5
+  despawnDistance: 20
+  despawnCheckInterval: 2
 --- !u!4 &624609465
 Transform:
   m_ObjectHideFlags: 0
@@ -1052,6 +1059,7 @@ MonoBehaviour:
   depthFarMeters: 18
   fallbackMeters: 4
   assumedGroundOffsetY: 1.5
+  requireGroundedSpawn: 1
   candidateConfirmCount: 2
   candidateWindowSeconds: 4
   minCellSize: 0.6
@@ -1061,6 +1069,7 @@ MonoBehaviour:
   despawnDistance: 18
   despawnStaleSeconds: 35
   despawnCheckInterval: 1
+  farSeenGraceSeconds: 3
 --- !u!1 &692674511
 GameObject:
   m_ObjectHideFlags: 0
@@ -1145,7 +1154,7 @@ MonoBehaviour:
   <trackablesChanged>k__BackingField:
     m_PersistentCalls:
       m_Calls: []
-  m_PlanePrefab: {fileID: 0}
+  m_PlanePrefab: {fileID: 3739570576030767943, guid: f18dee04ea2d75b499cfbba086ff9aeb, type: 3}
   m_DetectionMode: 3
 --- !u!114 &692674516
 MonoBehaviour:
@@ -1299,7 +1308,7 @@ MonoBehaviour:
   biomePrefix: "\U0001F30D Biome: "
   objectsPrefix: "\U0001F4E6 Alg\u0131lanan: "
   maxDisplayedObjects: 5
-  confidenceThreshold: 0.5
+  confidenceThreshold: 0.25
   biomeColor: {r: 0.2, g: 0.8, b: 0.4, a: 1}
   objectColor: {r: 0.4, g: 0.6, b: 1, a: 1}
   highConfidenceColor: {r: 0.2, g: 1, b: 0.2, a: 1}

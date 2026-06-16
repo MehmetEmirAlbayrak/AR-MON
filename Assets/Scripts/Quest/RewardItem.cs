@@ -6,6 +6,8 @@ namespace ARMON.Quest
         SmallPotion,
         SuperPotion,
         HyperPotion,
-        Revive
+        Revive,
+        GreatBall,
+        UltraBall
     }
 }

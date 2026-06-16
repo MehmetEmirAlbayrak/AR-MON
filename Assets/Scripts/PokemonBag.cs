@@ -11,6 +11,14 @@ public enum PotionType
     Revive          // Bayılmış Pokemon'u %50 HP ile diriltir
 }
 
+// Pokeball türleri — Normal sınırsız, Great/Ultra sayılı (catch bonusu PokeballCollision tarafında).
+public enum BallType
+{
+    Normal,
+    Great,
+    Ultra
+}
+
 [System.Serializable]
 public class PotionInventory
 {
@@ -35,9 +43,16 @@ public class PokemonBag : MonoBehaviour
     private const string SAVE_KEY = "PokemonBag";
     private const string POTION_SAVE_KEY = "PotionBag";
     private const string POKEBALL_SAVE_KEY = "PokeballCount";
-    private int pokeballs;
+    private const string GREATBALL_SAVE_KEY = "GreatBallCount";
+    private const string ULTRABALL_SAVE_KEY = "UltraBallCount";
+    private int pokeballs; // legacy "normal ball" stoğu — artık sınırsız, tüketilmiyor
+    private int greatBalls;
+    private int ultraBalls;
 
+    /// <summary>Normal Pokéball sınırsız — sadece eski quest reward'larla "boost" sayacı; tüketilmez.</summary>
     public int PokeballCount => pokeballs;
+    public int GreatBallCount => greatBalls;
+    public int UltraBallCount => ultraBalls;
 
     public List<PokemonData> CaughtPokemon => inventory.caughtPokemon;
     public PotionInventory Potions => potions;
@@ -400,33 +415,70 @@ public class PokemonBag : MonoBehaviour
     
     // ========== POKEBALL SİSTEMİ ==========
 
-    /// <summary>Pokeball stoğuna ekle (quest reward vs).</summary>
+    /// <summary>Normal Pokéball "bonus" stoğuna ekle. Atılırken tüketilmiyor — sayaç sadece quest istatistiği.</summary>
     public void AddPokeball(int amount)
     {
         if (amount <= 0) return;
         pokeballs += amount;
         SavePokeballs();
-        Debug.Log($"Pokeball x{amount} eklendi! Toplam: {pokeballs}");
     }
 
-    /// <summary>Pokeball harca; 0 ise false.</summary>
-    public bool TryConsumePokeball()
+    public void AddBall(BallType type, int amount)
     {
-        if (pokeballs <= 0) return false;
-        pokeballs--;
+        if (amount <= 0) return;
+        switch (type)
+        {
+            case BallType.Normal: pokeballs  += amount; break;
+            case BallType.Great:  greatBalls += amount; break;
+            case BallType.Ultra:  ultraBalls += amount; break;
+        }
         SavePokeballs();
-        return true;
     }
+
+    public int GetBallCount(BallType type)
+    {
+        switch (type)
+        {
+            case BallType.Normal: return int.MaxValue; // sınırsız
+            case BallType.Great:  return greatBalls;
+            case BallType.Ultra:  return ultraBalls;
+        }
+        return 0;
+    }
+
+    /// <summary>Top harca. Normal sınırsız → her zaman true. Great/Ultra → stok kontrol + düş.</summary>
+    public bool TryConsumeBall(BallType type)
+    {
+        switch (type)
+        {
+            case BallType.Normal:
+                return true;
+            case BallType.Great:
+                if (greatBalls <= 0) return false;
+                greatBalls--; SavePokeballs(); return true;
+            case BallType.Ultra:
+                if (ultraBalls <= 0) return false;
+                ultraBalls--; SavePokeballs(); return true;
+        }
+        return false;
+    }
+
+    /// <summary>Geriye dönük uyumluluk için; eski çağrılar Normal top kullanıyor sayılır → sınırsız, hep true.</summary>
+    public bool TryConsumePokeball() => TryConsumeBall(BallType.Normal);
 
     void SavePokeballs()
     {
         PlayerPrefs.SetInt(POKEBALL_SAVE_KEY, pokeballs);
+        PlayerPrefs.SetInt(GREATBALL_SAVE_KEY, greatBalls);
+        PlayerPrefs.SetInt(ULTRABALL_SAVE_KEY, ultraBalls);
         PlayerPrefs.Save();
     }
 
     void LoadPokeballs()
     {
-        pokeballs = PlayerPrefs.GetInt(POKEBALL_SAVE_KEY, 10);
+        pokeballs  = PlayerPrefs.GetInt(POKEBALL_SAVE_KEY, 10);
+        greatBalls = PlayerPrefs.GetInt(GREATBALL_SAVE_KEY, 0);
+        ultraBalls = PlayerPrefs.GetInt(ULTRABALL_SAVE_KEY, 0);
     }
 
     /// <summary>

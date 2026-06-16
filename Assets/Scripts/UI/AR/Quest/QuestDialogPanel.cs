@@ -178,7 +178,9 @@ namespace ARMON.UI.AR.Quest
         {
             switch (i)
             {
-                case RewardItem.Pokeball:    return "Poketopu";
+                case RewardItem.Pokeball:    return "Pokéball";
+                case RewardItem.GreatBall:   return "Great Ball";
+                case RewardItem.UltraBall:   return "Ultra Ball";
                 case RewardItem.SmallPotion: return "Küçük Pot";
                 case RewardItem.SuperPotion: return "Süper Pot";
                 case RewardItem.HyperPotion: return "Hyper Pot";
@@ -241,8 +243,15 @@ namespace ARMON.UI.AR.Quest
                 return;
             }
 
+            // NPC kapsülü anchor'ın 0.9m üstünde durur — pokemon'u NPC'nin değil,
+            // ANCHOR'ın (zemin) hizasında spawn et; yoksa havada doğar.
+            Transform groundRef = npc.transform.parent != null ? npc.transform.parent : npc.transform;
             Vector3 fwd = npc.transform.forward;
-            Vector3 spawnPos = npc.transform.position + fwd * 1.5f;
+            fwd.y = 0f;
+            if (fwd.sqrMagnitude < 1e-4f) fwd = Vector3.forward;
+            fwd.Normalize();
+            Vector3 spawnPos = groundRef.position + fwd * 1.5f;
+            spawnPos.y = groundRef.position.y + 0.01f; // z-fighting önleme
             GameObject mon = Instantiate(species.basePrefab, spawnPos, Quaternion.LookRotation(-fwd));
             mon.SetActive(false);
             var wp = mon.GetComponent<WildPokemon>();

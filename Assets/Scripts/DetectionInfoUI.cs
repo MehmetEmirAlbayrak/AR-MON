@@ -32,9 +32,10 @@ public class DetectionInfoUI : MonoBehaviour
     [Tooltip("Maksimum gösterilecek obje sayısı")]
     public int maxDisplayedObjects = 5;
     
-    [Tooltip("Güven eşiği (bunun altındakiler gösterilmez)")]
+    [Tooltip("Güven eşiği (bunun altındakiler gösterilmez). Server'ın kalibre edilmiş " +
+             "sınıf eşikleri 0.20'ye kadar iner — bundan yüksek tutmak geçerli tespitleri gizler.")]
     [Range(0f, 1f)]
-    public float confidenceThreshold = 0.5f;
+    public float confidenceThreshold = 0.25f;
 
     [Header("Renk Ayarları")]
     public Color biomeColor = new Color(0.2f, 0.8f, 0.4f);  // Yeşilimsi
@@ -120,21 +121,31 @@ public class DetectionInfoUI : MonoBehaviour
     /// </summary>
     public void UpdateBiome(string biome)
     {
-        string displayText = string.IsNullOrEmpty(biome) 
-            ? $"{biomePrefix}Algılanıyor..." 
-            : $"{biomePrefix}<color=#{ColorUtility.ToHtmlStringRGB(biomeColor)}>{FormatBiomeName(biome)}</color>";
+        UpdateBiome(biome, -1f);
+    }
+
+    /// <summary>
+    /// Biome bilgisini güven yüzdesiyle birlikte güncelle (confidence &lt; 0 → gizle)
+    /// </summary>
+    public void UpdateBiome(string biome, float confidence)
+    {
+        string confSuffix = confidence >= 0f ? $" <size=70%>({confidence:P0})</size>" : "";
+        string displayText = string.IsNullOrEmpty(biome)
+            ? $"{biomePrefix}Algılanıyor..."
+            : $"{biomePrefix}<color=#{ColorUtility.ToHtmlStringRGB(biomeColor)}>{FormatBiomeName(biome)}</color>{confSuffix}";
 
         if (biomeText != null)
         {
             biomeText.text = displayText;
         }
-        
+
         if (legacyBiomeText != null)
         {
             // Legacy UI HTML tag desteklemez, düz metin kullan
-            legacyBiomeText.text = string.IsNullOrEmpty(biome) 
-                ? $"{biomePrefix}Algılanıyor..." 
-                : $"{biomePrefix}{FormatBiomeName(biome)}";
+            string plainConf = confidence >= 0f ? $" ({confidence:P0})" : "";
+            legacyBiomeText.text = string.IsNullOrEmpty(biome)
+                ? $"{biomePrefix}Algılanıyor..."
+                : $"{biomePrefix}{FormatBiomeName(biome)}{plainConf}";
             legacyBiomeText.color = biomeColor;
         }
     }

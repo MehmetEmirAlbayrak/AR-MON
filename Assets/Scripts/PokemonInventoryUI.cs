@@ -8,8 +8,9 @@ public class PokemonInventoryUI : MonoBehaviour
 {
     public static PokemonInventoryUI Instance { get; private set; }
 
-    bool isOpen = false;
-    public bool IsOpen => isOpen;
+    // Gerçek panel durumundan türetilir — panel kendi KAPAT butonuyla kapatıldığında
+    // burada tutulan ayrı bir bool stale kalıyordu (throw/saldırı girişi kalıcı kilitleniyordu).
+    public bool IsOpen => ARMON.UI.AR.ARInventoryPanel.Current != null;
 
     void Awake()
     {
@@ -24,19 +25,17 @@ public class PokemonInventoryUI : MonoBehaviour
 
     public void ToggleInventory()
     {
-        if (isOpen) CloseInventory();
+        if (IsOpen) CloseInventory();
         else OpenInventory();
     }
 
     public void OpenInventory()
     {
-        isOpen = true;
         ARMON.UI.AR.ARInventoryPanel.Open(Camera.main);
     }
 
     public void CloseInventory()
     {
-        isOpen = false;
         if (ARMON.UI.AR.ARInventoryPanel.Current != null)
             ARMON.UI.AR.ARInventoryPanel.Current.Close();
     }
