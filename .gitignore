@@ -81,3 +81,11 @@ Thumbs.db
 *.swp
 *.swo
 *~
+
+# Agent tooling / planning docs (not part of the Unity project)
+CLAUDE.md
+.claude/
+docs/
+
+# Unity editor-generated AR simulation assets
+GeneratedAssets/
