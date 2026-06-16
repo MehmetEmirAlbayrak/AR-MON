@@ -1,0 +1,38 @@
+{
+  "calibration_date": "2026-06-15T11:05:48.791410",
+  "model": "models/best.pt",
+  "val_dataset": "dataset_v3/val",
+  "thresholds": {
+    "bush": {
+      "threshold": 0.6,
+      "precision": 0.9167,
+      "recall": 0.7534,
+      "f0.5": 0.8786
+    },
+    "grass": {
+      "threshold": 0.4,
+      "precision": 0.8192,
+      "recall": 0.7351,
+      "f0.5": 0.8009
+    },
+    "leaf": {
+      "threshold": 0.3,
+      "precision": 0.8312,
+      "recall": 0.6882,
+      "f0.5": 0.798
+    },
+    "rock": {
+      "threshold": 0.35,
+      "precision": 1.0,
+      "recall": 0.9188,
+      "f0.5": 0.9826,
+      "note": "manually lowered 0.80->0.35 for real-world rock recall (field rocks score low); P/R/F0.5 above are from the original 0.80 calibration point"
+    },
+    "tree": {
+      "threshold": 0.2,
+      "precision": 0.8457,
+      "recall": 0.6789,
+      "f0.5": 0.8061
+    }
+  }
+}

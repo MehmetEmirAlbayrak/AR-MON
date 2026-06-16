@@ -1,0 +1,24 @@
+flask==3.0.3
+flask-cors==4.0.1
+pillow==10.2.0
+
+# Scientific core
+numpy==1.26.4
+matplotlib==3.8.4
+
+# YOLO + PyTorch
+ultralytics==8.3.0
+torch==2.3.1
+torchvision==0.18.1
+
+# MiDaS depth model backbone
+timm==0.9.12
+
+# Dataset utilities
+pyyaml==6.0.1
+
+# HTTP
+requests==2.32.3
+
+# Testing
+pytest==8.1.1

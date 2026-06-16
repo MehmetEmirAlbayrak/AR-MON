@@ -1,0 +1,89 @@
+# Virtual environments
+venv/
+.venv/
+.venv310/
+.venv311/
+env/
+
+# Python cache
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+.pytest_cache/
+
+# Environment variables
+.env
+.env.local
+
+# IDE / OS
+.idea/
+.vscode/
+*.swp
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log
+
+# Training outputs and checkpoints (not served)
+runs/
+checkpoints/
+*.cache
+
+# Datasets (too large for GitHub)
+dataset/
+dataset_rock/
+dataset_v3/
+dataset_v3_test_clean/
+Datasett/
+bitirme_relabel/
+realworld_test/
+label_mining_preview/
+debug_frames/
+*_yolo/
+biome_merged*/
+
+# Pre-trained / base weights (the served weights live in models/)
+yolo*.pt
+yolov*.pt
+
+# Training / dataset / evaluation scripts (not part of the server)
+train_*.py
+merge_*.py
+rebuild_*.py
+relabel_*.py
+apply_*.py
+mine_*.py
+supplement_*.py
+calibrate_*.py
+eval_*.py
+compare_*.py
+baseline_*.py
+resume_*.py
+prepare_*.py
+split_*.py
+auto_label_*.py
+camera_test.py
+*_results*.json
+*_report*.json
+calibrated_thresholds_v*.json
+headtohead*.json
+*contamination*.json
+
+# Presentations, posters, thesis, docs
+*.pptx
+*.ppt
+*.pdf
+~$*
+armon_deck_unpacked/
+docs/
+pptx_extract.txt
+*.png
+
+# Tooling / agents
+CLAUDE.md
+.claude/
+ngrok.exe
+*.zip
